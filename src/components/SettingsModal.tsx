@@ -616,13 +616,32 @@ function UpgradeAccountSection({
     if (profErr) {
       // 23505 = unique_violation in Postgres. Surface as the same
       // user-facing message regardless of whether the probe missed
-      // or the constraint caught a race.
+      // or the constraint caught a race. The probe at the top of
+      // this function ran BEFORE auth.updateUser attached an email
+      // and password to this session, so a 23505 here means the
+      // session is now stranded: credentials are attached, but the
+      // username row was claimed by another signup before we could
+      // insert. The user would otherwise be unable to recover —
+      // signing in with the new email+password works, but the
+      // username lookup that resolves to a user_id won't find them,
+      // and the next "Continue as guest" would create a *second*
+      // anonymous account. Sign out so they land on the login screen
+      // and can pick a different name.
+      setBusy(false);
       if (profErr.code === '23505') {
-        setError('That username is taken.');
+        try {
+          await supabase.auth.signOut({ scope: 'global' });
+        } catch {
+          // Sign-out itself failed (network down). The local session
+          // is still attached with the unclaimed credentials; call
+          // onAccountDeleted so the parent flips the UI back to
+          // LoginPage even if the server round-trip didn't land.
+        }
+        setError('That username was just taken. Please sign up again with a different name.');
+        onAccountDeleted();
       } else {
         setError(profErr.message);
       }
-      setBusy(false);
       return;
     }
     setBusy(false);
