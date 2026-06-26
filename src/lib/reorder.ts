@@ -95,7 +95,7 @@ export function applyMove(
         break;
       }
     }
-    if (!actualSourceList) return null;
+    if (!actualSourceList || !actualSourceQuadrant) return null;
   } else {
     actualSourceList = buckets[sourceQuadrant];
     actualSourceQuadrant = sourceQuadrant;
