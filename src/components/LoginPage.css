@@ -1,0 +1,565 @@
+/* =============================================================
+   LoginPage — theme-aware liquid glass.
+   Dark:  midnight gradient → black, glass card with white sheen.
+   Light: ivory (#FFFFF0) gradient, glass card with white sheen
+          (still glass, just over a lighter base).
+   ============================================================= */
+
+/* ---------- Theme tokens ---------- */
+:root {
+  --login-bg-top:    #011635;
+  --login-bg-bottom: #000000;
+  --login-card-bg:   rgba(255, 255, 255, 0.10);
+  --login-card-border: rgba(255, 255, 255, 0.22);
+  --login-card-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+  --login-card-glow: rgba(27, 163, 156, 0.25);
+  --login-fg:        #ffffff;
+  --login-fg-soft:   rgba(245, 245, 247, 0.72);
+  --login-fg-muted:  rgba(245, 245, 247, 0.65);
+  --login-fg-faint:  rgba(245, 245, 247, 0.45);
+  --login-input-bg:  rgba(255, 255, 255, 0.08);
+  --login-input-border: rgba(255, 255, 255, 0.18);
+  --login-input-focus: rgba(27, 163, 156, 0.8);
+  --login-input-glow: rgba(27, 163, 156, 0.25);
+  --login-chip-bg:   rgba(255, 255, 255, 0.16);
+  --login-chip-fg:   #f5f5f7;
+  --login-chip-border: rgba(255, 255, 255, 0.25);
+  --login-sheen:     rgba(255, 255, 255, 0.18);
+  --login-divider:   rgba(255, 255, 255, 0.10);
+  --login-danger:    #ff8a8a;
+}
+
+:root[data-theme='light'] {
+  --login-bg-top:    #FFFFF0;
+  --login-bg-bottom: #e9e7d4;
+  /* Soft tinted blobs behind the gradient — give the ivory theme the same
+     "ambient depth" the midnight theme gets from its own dark gradient.
+     Coordinates match the dark theme's aurora positions so the page feels
+     symmetrical across themes. */
+  --login-aurora-a: rgba(255, 196, 138, 0.45);  /* warm peach */
+  --login-aurora-b: rgba(186, 168, 255, 0.40);  /* soft lilac */
+  --login-aurora-c: rgba(155, 200, 255, 0.35);  /* pale sky */
+  --login-card-bg:   rgba(255, 255, 255, 0.55);
+  --login-card-border: rgba(255, 255, 255, 0.85);
+  --login-card-shadow:
+    0 20px 60px rgba(20, 25, 50, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.45);
+  --login-card-glow: rgba(27, 163, 156, 0.30);
+  --login-fg:        #1a1a1a;
+  --login-fg-soft:   rgba(26, 26, 26, 0.72);
+  --login-fg-muted:  rgba(26, 26, 26, 0.62);
+  --login-fg-faint:  rgba(26, 26, 26, 0.42);
+  --login-input-bg:  rgba(255, 255, 255, 0.70);
+  --login-input-border: rgba(20, 25, 50, 0.12);
+  --login-input-focus: #1ba39c;
+  --login-input-glow: rgba(27, 163, 156, 0.22);
+  --login-chip-bg:   rgba(255, 255, 255, 0.70);
+  --login-chip-fg:   #1a1a1a;
+  --login-chip-border: rgba(20, 25, 50, 0.14);
+  --login-sheen:     rgba(255, 255, 255, 0.75);
+  --login-divider:   rgba(20, 25, 50, 0.10);
+  --login-danger:    #b91c1c;
+}
+
+/* ---------- Page shell ---------- */
+.login-page {
+  min-height: 100vh;
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  /* Base: ivory → soft beige. In light theme, three large blurred color
+     blobs sit on top to add the same ambient depth the dark theme gets from
+     its midnight gradient — they're scoped under [data-theme="light"] so the
+     dark theme is unaffected. */
+  background: linear-gradient(180deg, var(--login-bg-top) 0%, var(--login-bg-top) 45%, var(--login-bg-bottom) 100%);
+  color: var(--login-fg);
+  overflow: hidden;
+  isolation: isolate;
+  transition: background .35s ease, color .35s ease;
+}
+
+:root[data-theme='light'] .login-page {
+  /* Layered: vertical ivory base + three radial color washes that drift
+     around the center. Same drift keyframes the dark theme uses, just
+     re-keyed here so the colors stay in the right region. */
+  background:
+    radial-gradient(560px 560px at 50% 30%, var(--login-aurora-a) 0%, transparent 65%),
+    radial-gradient(520px 520px at 50% 40%, var(--login-aurora-b) 0%, transparent 70%),
+    radial-gradient(480px 480px at 50% 35%, var(--login-aurora-c) 0%, transparent 72%),
+    linear-gradient(180deg, #FFFFF0 0%, #FFFFF0 45%, #efeccf 100%);
+}
+
+:root[data-theme='light'] .login-page {
+  animation: light-aurora-drift 28s ease-in-out infinite alternate;
+}
+
+@keyframes light-aurora-drift {
+  0%   { background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%; }
+  100% { background-position: 4% 6%, -4% -4%, 6% -4%, 0% 0%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme='light'] .login-page { animation: none; }
+}
+
+/* ---------- Aurora background (disabled — kept as a hook) ---------- */
+.login-bg { display: none; }
+
+/* ---------- Brand top-right ---------- */
+.login-brand-top {
+  position: absolute;
+  top: 28px;
+  right: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--login-fg);
+  z-index: 2;
+  animation: brand-fade-in .6s ease-out .15s both;
+  transition: color .35s ease;
+}
+
+.login-brand-top .brand-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--login-chip-bg);
+  color: var(--login-chip-fg);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--login-chip-border);
+  transition: background .35s, color .35s, border-color .35s;
+}
+
+@keyframes brand-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Glass card ---------- */
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 400px;
+  padding: 36px 32px 28px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  background: var(--login-card-bg);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid var(--login-card-border);
+  box-shadow: var(--login-card-shadow);
+  color: var(--login-fg);
+
+  animation:
+    card-enter .7s cubic-bezier(.2, .8, .2, 1) both,
+    card-breathe 7s ease-in-out 1s infinite;
+
+  transition:
+    background .35s ease,
+    color .35s ease,
+    border-color .35s ease,
+    box-shadow .35s ease;
+}
+
+/* Top-edge sheen — pure decoration, mimics light catching the glass */
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    var(--login-sheen) 0%,
+    rgba(255, 255, 255, 0.00) 35%
+  );
+}
+
+/* Soft outer glow that pulses with the breathing */
+.login-card::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(60% 50% at 50% 60%, var(--login-card-glow), transparent 70%);
+  filter: blur(20px);
+  opacity: 0.6;
+  animation: card-glow 7s ease-in-out 1s infinite;
+}
+
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(24px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes card-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.005); }
+}
+
+@keyframes card-glow {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.75; }
+}
+
+/* ---------- Avatar ---------- */
+.login-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--login-chip-bg);
+  color: var(--login-chip-fg);
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  border: 1px solid var(--login-chip-border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: avatar-in .6s cubic-bezier(.2, .8, .2, 1) .25s both;
+  transition: background .35s, color .35s, border-color .35s;
+}
+
+@keyframes avatar-in {
+  from { opacity: 0; transform: scale(.6); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- Type ---------- */
+h1 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+  color: var(--login-fg);
+  animation: rise-in .55s ease-out .35s both;
+  transition: color .35s ease;
+}
+
+.subtitle {
+  color: var(--login-fg-soft);
+  margin: 0 0 24px;
+  font-size: 14px;
+  animation: rise-in .55s ease-out .42s both;
+  transition: color .35s ease;
+}
+
+form {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+}
+
+form > .field:nth-of-type(1) { animation: rise-in .55s ease-out .50s both; }
+form > .field:nth-of-type(2) { animation: rise-in .55s ease-out .58s both; }
+form > .form-error,
+form > .form-success      { animation: rise-in .55s ease-out .66s both; }
+form > .btn-primary       { animation: rise-in .55s ease-out .74s both; }
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--login-fg-soft);
+  transition: color .35s ease;
+}
+
+/* ---------- Inputs ---------- */
+.input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--login-input-border);
+  border-radius: 10px;
+  background: var(--login-input-bg);
+  color: var(--login-fg);
+  font: inherit;
+  transition: border-color .15s, box-shadow .15s, background .15s, color .35s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.input::placeholder { color: var(--login-fg-faint); transition: color .35s; }
+
+.input:focus {
+  outline: none;
+  border-color: var(--login-input-focus);
+  background: var(--login-input-bg);
+  box-shadow: 0 0 0 3px var(--login-input-glow);
+}
+
+.input:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* ---------- Password field ---------- */
+.password-field { position: relative; }
+.password-field .input { padding-right: 36px; }
+
+.password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--login-fg-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color .15s;
+}
+.password-toggle:hover:not(:disabled) { color: var(--login-fg); }
+.password-toggle:disabled { cursor: not-allowed; }
+
+/* ---------- Forgot link / messages ---------- */
+.forgot-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin-top: 4px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--login-fg-muted);
+  cursor: pointer;
+  align-self: flex-end;
+  transition: color .15s;
+}
+.forgot-link:hover:not(:disabled) {
+  color: var(--login-fg);
+  text-decoration: underline;
+}
+.forgot-link:disabled { cursor: not-allowed; }
+
+.form-error,
+.form-success {
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.4;
+}
+.form-error   { color: var(--login-danger); }
+.form-success { color: var(--login-fg-soft); }
+
+/* ---------- Primary button ---------- */
+.btn-primary {
+  width: 100%;
+  padding: 11px 14px;
+  background: #1ba39c;
+  color: #ffffff;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .18s, transform .1s, box-shadow .15s, opacity .15s;
+  box-shadow: 0 6px 18px rgba(27, 163, 156, 0.35);
+  animation: btn-glow 3.5s ease-in-out 1.4s infinite;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1d1a55;
+  color: #ffffff;
+  box-shadow: 0 10px 26px rgba(29, 26, 85, 0.7);
+  animation-play-state: paused;
+}
+.btn-primary:active:not(:disabled) { transform: translateY(1px); }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; animation: none; }
+
+@keyframes btn-glow {
+  0%, 100% { box-shadow: 0 6px 18px rgba(27, 163, 156, 0.35); }
+  50%      { box-shadow: 0 8px 26px rgba(27, 163, 156, 0.65); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: login-spin .7s linear infinite;
+  margin-right: 8px;
+  vertical-align: -1px;
+}
+@keyframes login-spin { to { transform: rotate(360deg); } }
+
+.footer {
+  margin-top: 24px;
+  text-align: center;
+  color: var(--login-fg-muted);
+  font-size: 13px;
+  animation: rise-in .55s ease-out .85s both;
+  transition: color .35s ease;
+}
+.footer a {
+  color: var(--login-fg);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color .35s;
+}
+.footer a:hover { text-decoration: underline; }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .login-bg,
+  .login-card,
+  .login-card > *,
+  .btn-primary { animation: none !important; }
+  .login-card,
+  .login-card > * { opacity: 1 !important; transform: none !important; }
+}
+
+/* ---------- Theme toggle (shared shape; works on both pages) ---------- */
+.theme-toggle {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--login-chip-bg);
+  border: 1px solid var(--login-chip-border);
+  border-radius: 8px;
+  color: var(--login-chip-fg);
+  cursor: pointer;
+  padding: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    background .25s,
+    border-color .25s,
+    color .25s,
+    transform .15s,
+    box-shadow .2s;
+}
+
+.theme-toggle:hover {
+  background: var(--login-card-bg);
+  border-color: var(--login-card-border);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.theme-toggle:active { transform: translateY(0); }
+
+.theme-toggle svg {
+  transition: transform .35s ease;
+}
+
+/* ---------- Auth divider ("or") ---------- */
+.auth-divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 6px;
+  color: var(--login-fg-faint);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--login-divider);
+}
+
+/* ---------- Guest button ---------- */
+.btn-guest {
+  width: 100%;
+  margin-top: 8px;
+  /* Match the secondary CTA's visual weight — outlined / quiet.
+     LoginPage doesn't have a .btn-secondary rule (the page is
+     single-flow), so define one inline scoped to the guest button.
+     Glass-on-glass keeps it consistent with the card. */
+  background: transparent;
+  color: var(--login-fg);
+  border: 1px solid var(--login-input-border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    transform .1s ease;
+}
+.btn-guest:hover:not(:disabled) {
+  background: var(--login-chip-bg);
+  border-color: var(--login-chip-border);
+}
+.btn-guest:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn-guest:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* ---------- Guest disclaimer ---------- */
+.guest-disclaimer {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--login-fg-muted);
+  text-align: center;
+}
+
+/* ---------- Inline link (used inside paragraphs) ---------- */
+.inline-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--login-fg);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color .2s ease;
+}
+.inline-link:hover {
+  color: #1ba39c;
+}
+.theme-toggle:hover svg { transform: rotate(-15deg); }

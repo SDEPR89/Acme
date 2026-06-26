@@ -1,0 +1,1924 @@
+/* =============================================================
+   Dashboard — theme-aware liquid glass.
+   Dark:  midnight base → black, glass surfaces with white sheen.
+   Light: ivory (#FFFFF0) base, glass surfaces with white sheen.
+   ============================================================= */
+
+/* ---------- Theme tokens ---------- */
+:root {
+  --page-bg-top:    #011635;
+  --page-bg-bottom: #000000;
+
+  --glass-bg:       rgba(255, 255, 255, 0.08);
+  --glass-bg-soft:  rgba(255, 255, 255, 0.05);
+  --glass-bg-strong:rgba(255, 255, 255, 0.10);
+  --glass-border:   rgba(255, 255, 255, 0.18);
+  --glass-border-strong: rgba(255, 255, 255, 0.28);
+  --glass-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20);
+  --glass-shadow-hover:
+    0 24px 70px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  --sheen:          rgba(255, 255, 255, 0.14);
+  --divider:        rgba(255, 255, 255, 0.10);
+
+  --fg:             #f5f5f7;
+  --fg-soft:        rgba(245, 245, 247, 0.85);
+  --fg-muted:       rgba(245, 245, 247, 0.65);
+  --fg-faint:       rgba(245, 245, 247, 0.55);
+  --fg-fainter:     rgba(245, 245, 247, 0.45);
+
+  --chip-bg:        rgba(255, 255, 255, 0.10);
+  --chip-border:    rgba(255, 255, 255, 0.18);
+
+  --input-bg:       rgba(255, 255, 255, 0.08);
+  --input-border:   rgba(255, 255, 255, 0.18);
+
+  --danger:         #ff8a8a;
+  --danger-bg:      rgba(255, 138, 138, 0.08);
+  --danger-border:  rgba(255, 138, 138, 0.45);
+
+  --accent-teal:    #1ba39c;
+  --accent-midnight:#1d1a55;
+
+  --backdrop-bg:    rgba(2, 2, 12, 0.55);
+  --modal-bg:       rgba(20, 18, 50, 0.55);
+  --modal-border:   rgba(255, 255, 255, 0.22);
+  --modal-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30);
+
+  --check-accent:   #1ba39c;
+
+  /* Quadrant accent lines — mirrored from index.css so the dashboard
+     defines its own complete token set. The picker palette below is
+     drawn from the same hues so subject dots feel related to the
+     quadrants they're filed under. */
+  --q-do-first:  #f87171;
+  --q-schedule:  #60a5fa;
+  --q-delegate:  #fbbf24;
+  --q-eliminate: #9ca3af;
+
+  /* Curated color palette for subject tags. The first value is the
+     default for newly-created subjects. Kept as a single token list so
+     the picker UI can iterate over it without a JS-side color table. */
+  --subject-palette-1: #1ba39c; /* teal — primary accent */
+  --subject-palette-2: #60a5fa; /* blue — matches Schedule quadrant */
+  --subject-palette-3: #fbbf24; /* amber — matches Delegate quadrant */
+  --subject-palette-4: #f87171; /* red — matches Do First quadrant */
+  --subject-palette-5: #a78bfa; /* violet — a calm fifth option */
+  --subject-palette-6: #34d399; /* green — nature / health */
+}
+
+:root[data-theme='light'] {
+  --page-bg-top:    #FFFFF0;
+  --page-bg-bottom: #efeccf;
+
+  /* Soft tinted aurora blobs — same ambient-depth idea as the dark theme.
+     Scoped to data-theme="light" so the dark theme is untouched. */
+  --aurora-a: rgba(255, 196, 138, 0.40);  /* warm peach */
+  --aurora-b: rgba(186, 168, 255, 0.35);  /* soft lilac */
+  --aurora-c: rgba(155, 200, 255, 0.32);  /* pale sky */
+
+  --glass-bg:       rgba(255, 255, 255, 0.55);
+  --glass-bg-soft:  rgba(255, 255, 255, 0.40);
+  --glass-bg-strong:rgba(255, 255, 255, 0.70);
+  --glass-border:   rgba(20, 25, 50, 0.10);
+  --glass-border-strong: rgba(20, 25, 50, 0.18);
+  --glass-shadow:
+    0 16px 48px rgba(20, 25, 50, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --glass-shadow-hover:
+    0 24px 70px rgba(20, 25, 50, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --sheen:          rgba(255, 255, 255, 0.70);
+  --divider:        rgba(20, 25, 50, 0.10);
+
+  --fg:             #1a1a1a;
+  --fg-soft:        rgba(26, 26, 26, 0.82);
+  --fg-muted:       rgba(26, 26, 26, 0.62);
+  --fg-faint:       rgba(26, 26, 26, 0.52);
+  --fg-fainter:     rgba(26, 26, 26, 0.38);
+
+  --chip-bg:        rgba(255, 255, 255, 0.70);
+  --chip-border:    rgba(20, 25, 50, 0.12);
+
+  --input-bg:       rgba(255, 255, 255, 0.70);
+  --input-border:   rgba(20, 25, 50, 0.12);
+
+  --danger:         #b91c1c;
+  --danger-bg:      rgba(185, 28, 28, 0.08);
+  --danger-border:  rgba(185, 28, 28, 0.40);
+
+  --accent-teal:    #1ba39c;
+  --accent-midnight:#1d1a55;
+
+  --backdrop-bg:    rgba(20, 25, 50, 0.32);
+  --modal-bg:       rgba(255, 255, 252, 0.70);
+  --modal-border:   rgba(20, 25, 50, 0.12);
+  --modal-shadow:
+    0 30px 80px rgba(20, 25, 50, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+
+  --check-accent:   #1ba39c;
+
+  /* Light-theme quadrant hues — slightly more saturated than the dark
+     theme so the top accent line on each quadrant stays legible on
+     ivory. Drawn from the same hue families as the dark theme. */
+  --q-do-first:  #ef4444;
+  --q-schedule:  #3b82f6;
+  --q-delegate:  #f59e0b;
+  --q-eliminate: #6b7280;
+
+  /* Curated picker palette — identical hues to dark, since swatches
+     render against a small swatch background that doesn't change with
+     the theme. */
+  --subject-palette-1: #1ba39c;
+  --subject-palette-2: #3b82f6;
+  --subject-palette-3: #f59e0b;
+  --subject-palette-4: #ef4444;
+  --subject-palette-5: #8b5cf6;
+  --subject-palette-6: #10b981;
+}
+
+/* ---------- Page shell ---------- */
+.dashboard {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 32px 48px;
+  width: 100%;
+  margin: 0;
+  color: var(--fg);
+  background: linear-gradient(180deg, var(--page-bg-top) 0%, var(--page-bg-top) 45%, var(--page-bg-bottom) 100%);
+  isolation: isolate;
+  transition: background .35s ease, color .35s ease;
+}
+
+@media (max-width: 720px) {
+  .dashboard { padding: 16px; }
+}
+
+/* Light-theme ambient depth: layered radial color washes over the ivory
+   base. Drifts slowly so the page has the same subtle life as the dark
+   theme, but the colors are warm & pastel — appropriate for ivory. */
+:root[data-theme='light'] .dashboard {
+  background:
+    radial-gradient(620px 620px at 50% 18%, var(--aurora-a) 0%, transparent 65%),
+    radial-gradient(560px 560px at 50% 40%, var(--aurora-b) 0%, transparent 70%),
+    radial-gradient(520px 520px at 50% 28%, var(--aurora-c) 0%, transparent 72%),
+    linear-gradient(180deg, #FFFFF0 0%, #FFFFF0 45%, #efeccf 100%);
+  animation: dashboard-light-drift 32s ease-in-out infinite alternate;
+}
+
+@keyframes dashboard-light-drift {
+  0%   { background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%; }
+  100% { background-position: 3% 5%, -3% -4%, 5% -3%, 0% 0%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme='light'] .dashboard { animation: none; }
+}
+
+/* ---------- Aurora background (disabled — kept as a hook) ---------- */
+.dashboard-bg { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .matrix-grid--enter .quadrant,
+  .done-list--enter,
+  .done-empty--enter,
+  .quadrant,
+  .task-card,
+  .task-delete-btn,
+  .view-tab.is-active,
+  .modal,
+  .modal-backdrop,
+  .btn-primary,
+  .subject-manager,
+  .subject-select,
+  .task-form,
+  .dashboard-view,
+  .task-list--swapping { animation: none !important; transition: none !important; }
+  .matrix-grid--enter .quadrant,
+  .done-list--enter,
+  .done-empty--enter { opacity: 1 !important; transform: none !important; }
+}
+
+/* ---------- Header ---------- */
+.dashboard-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--divider);
+  margin-bottom: 28px;
+  transition: border-color .35s ease;
+}
+
+.dashboard-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-display-name {
+  color: var(--fg-muted);
+  font-size: 13px;
+  transition: color .35s ease;
+}
+
+/* ---------- Toolbar ---------- */
+.dashboard-toolbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dashboard-toolbar h1 {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  margin: 0;
+  transition: color .35s ease;
+}
+
+.dashboard-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 0 0 12px;
+  position: relative;
+  z-index: 2;
+}
+
+/* ---------- Guest banner ----------
+   Shown above the matrix for anonymous users. Soft tint so it
+   doesn't compete with the active tab badge, with an inline-link
+   CTA that opens Settings. */
+.dashboard-guest-banner {
+  position: relative;
+  z-index: 2;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(27, 163, 156, 0.10);
+  border: 1px solid rgba(27, 163, 156, 0.30);
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dashboard-guest-banner .inline-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--accent-teal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: filter .2s ease;
+}
+.dashboard-guest-banner .inline-link:hover {
+  filter: brightness(1.15);
+}
+
+/* ---------- Dashboard status (loading banner for the Done view) ---------- */
+.dashboard-status {
+  color: var(--fg-muted);
+  padding: 32px;
+  text-align: center;
+}
+
+@keyframes tab-pop {
+  0%   { transform: scale(.92); box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 rgba(27, 163, 156, 0); }
+  60%  { transform: scale(1.04); box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 6px rgba(27, 163, 156, 0.18); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- Matrix grid + quadrants ---------- */
+.matrix-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Wraps whichever view is currently visible (Active grid or Done list)
+   so React remounts on tab switch and the entrance animations re-fire.
+   A short cross-fade gives a real transition instead of an instant swap. */
+@keyframes dashboard-view-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-view {
+  animation: dashboard-view-enter .28s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+/* Stack the matrix and shrink per-quadrant min-height so the page
+   fits a phone fold. Header reflows to a brand row + control row
+   below for narrower screens (≤480px) — handled separately. */
+@media (max-width: 720px) {
+  .matrix-grid { grid-template-columns: 1fr; }
+  .quadrant { min-height: 180px; }
+}
+
+/* Narrow phones: reflow the header so the five header items don't
+   cram into one row, shrink the toolbar title, and guard task-card
+   text against overflow on very small widths. */
+@media (max-width: 480px) {
+  /* Header — two lines: brand on top, controls on a second row. */
+  .dashboard-header {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+  }
+  .brand {
+    margin-bottom: 0;
+    flex: 1;
+  }
+  .dashboard-user {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  /* Hide the verbose display-name on the smallest screens; the
+     buttons + brand are enough context. The full username is still
+     shown in the settings modal. */
+  .dashboard-display-name {
+    display: none;
+  }
+  /* Toolbar: smaller title so the view-toggle fits comfortably. */
+  .dashboard-toolbar h1 {
+    font-size: 20px;
+  }
+  .view-tab {
+    padding: 6px 10px;
+  }
+  /* Quadrant — drop internal padding slightly so cards don't dominate
+     the narrow viewport. */
+  .quadrant {
+    padding: 14px 16px 12px;
+    border-radius: 12px;
+  }
+  /* Task card text — guard against awkward line breaks in long
+     titles and ensure the title row can shrink past its content. */
+  .task-body {
+    min-width: 0;
+  }
+  .task-title-row {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .task-title {
+    overflow-wrap: anywhere;
+  }
+  /* Reduce outer dashboard padding further. The 720px rule above
+     already drops to 16px; on a phone we want a touch more room. */
+  .dashboard {
+    padding: 12px;
+  }
+}
+
+.matrix-grid--enter .quadrant {
+  animation: quadrant-rise .55s cubic-bezier(.2, .8, .2, 1) both;
+}
+.matrix-grid--enter .quadrant:nth-child(1) { animation-delay: .05s; }
+.matrix-grid--enter .quadrant:nth-child(2) { animation-delay: .13s; }
+.matrix-grid--enter .quadrant:nth-child(3) { animation-delay: .21s; }
+.matrix-grid--enter .quadrant:nth-child(4) { animation-delay: .29s; }
+
+@keyframes quadrant-rise {
+  from { opacity: 0; transform: translateY(16px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- Quadrant ---------- */
+.quadrant {
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 18px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 240px;
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+  transition:
+    transform .25s ease,
+    border-color .25s ease,
+    box-shadow .25s ease,
+    background .35s ease;
+}
+
+.quadrant::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--sheen) 0%, rgba(255, 255, 255, 0.00) 30%);
+}
+
+.quadrant::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent-line, var(--muted));
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  z-index: 1;
+}
+
+.quadrant:hover {
+  transform: translateY(-2px);
+  border-color: var(--glass-border-strong);
+  box-shadow: var(--glass-shadow-hover);
+}
+
+.quadrant-do_first  { --accent-line: var(--q-do-first);  }
+.quadrant-schedule  { --accent-line: var(--q-schedule);  }
+.quadrant-delegate  { --accent-line: var(--q-delegate);  }
+.quadrant-eliminate { --accent-line: var(--q-eliminate); }
+
+.quadrant-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.quadrant-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg);
+  transition: color .35s ease;
+}
+
+.quadrant-order {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent-line) 22%, transparent);
+  color: var(--fg);
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid color-mix(in srgb, var(--accent-line) 50%, transparent);
+  transition: color .35s;
+}
+
+.quadrant-subtitle {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin: 4px 0 0 30px;
+  transition: color .35s ease;
+}
+
+.quadrant-count {
+  font-size: 11px;
+  color: var(--fg-soft);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  border-radius: 999px;
+  padding: 1px 9px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background .35s, color .35s, border-color .35s;
+}
+
+.quadrant-empty {
+  color: var(--fg-faint);
+  font-size: 13px;
+  font-style: italic;
+  margin: 8px 0 12px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Task list ---------- */
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Task card ---------- */
+@keyframes task-card-enter {
+  from { opacity: 0; transform: translateY(-6px) scale(.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Animates each task row on mount. With React's default list rendering
+   this fires once per row, which lines up with "a new task was added" /
+   "a task moved into this view". Hover/focus transitions are preserved
+   by the existing `.task-card { transition: ... }` rule. */
+.task-list .task-card {
+  animation: task-card-enter .32s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+/* Subtle stagger so a freshly-arrived card doesn't pop in alongside its
+   siblings (which would feel busy). Cap at 6 — beyond that the delay is
+   imperceptible. */
+.task-list .task-card:nth-child(1) { animation-delay: 0ms; }
+.task-list .task-card:nth-child(2) { animation-delay: 28ms; }
+.task-list .task-card:nth-child(3) { animation-delay: 56ms; }
+.task-list .task-card:nth-child(4) { animation-delay: 84ms; }
+.task-list .task-card:nth-child(5) { animation-delay: 112ms; }
+.task-list .task-card:nth-child(6) { animation-delay: 140ms; }
+.task-list .task-card:nth-child(n+7) { animation-delay: 168ms; }
+
+.task-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 11px;
+  border: 1px solid var(--glass-border);
+  border-radius: 9px;
+  background: var(--glass-bg-soft);
+  transition:
+    border-color .18s ease,
+    background .18s ease,
+    box-shadow .18s ease;
+  position: relative;
+}
+
+.task-card:hover {
+  /* Removed the `transform: translateX(2px)` shift that used to live
+     here — it conflicted with @dnd-kit's transform during drag and
+     caused a visible "snap" when the drag started. Now we only change
+     color/border/shadow, which the transform-based drag animation
+     doesn't have to fight with. */
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border-strong);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Whole card is the drag handle. The default cursor is `grab` to
+   advertise the affordance — only when actively dragging does the
+   `grabbing` cursor from .is-dragging kick in. The inner checkbox,
+   task body (also drag handle), and delete button override this
+   below so their click targets read as `pointer` for stationary
+   clicks; the pointer sensor's 8px activation distance means a
+   stationary click still falls through to onClick, but a click that
+   drags past 8px becomes a drag. Without this the user couldn't tell
+   the card was draggable. */
+.task-card {
+  cursor: grab;
+}
+.task-card:active {
+  cursor: grabbing;
+}
+
+@supports (selector(:has(*))) {
+  .task-card:has(input:checked) {
+    animation: task-tick .4s cubic-bezier(.2, .8, .2, 1);
+  }
+}
+
+.task-card.is-done {
+  color: var(--fg-faint);
+}
+
+.task-card.is-done .task-title {
+  text-decoration: line-through;
+  color: var(--fg-faint);
+}
+
+.task-card.is-done .subject-dot {
+  opacity: 0.55;
+}
+
+@keyframes task-tick {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(27, 163, 156, 0); }
+  40%  { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(27, 163, 156, 0.18); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(27, 163, 156, 0); }
+}
+
+.task-check {
+  display: inline-flex;
+  align-items: center;
+  padding-top: 2px;
+  cursor: pointer;
+}
+
+.task-check input {
+  accent-color: var(--check-accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.task-body {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.task-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.subject-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.task-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg);
+  word-break: break-word;
+  transition: color .35s ease;
+}
+
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--fg-muted);
+  transition: color .35s ease;
+}
+
+.due-chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid var(--chip-border);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--fg-soft);
+  background: var(--chip-bg);
+  transition: background .35s, color .35s, border-color .35s;
+}
+
+.due-chip.is-overdue {
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+}
+
+.task-description {
+  font-size: 12px;
+  color: var(--fg-fainter);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ---------- Task delete button (hover-revealed × on each card) ---------- */
+.task-delete-btn {
+  /* Hidden by default; revealed on card hover/focus so the matrix stays
+     uncluttered. Uses opacity instead of display so the transition can
+     fade smoothly. */
+  flex-shrink: 0;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--fg-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  /* `pointer-events: none` while hidden so the button can't catch stray
+     clicks when the user is just hovering the row. */
+  pointer-events: none;
+  transition:
+    opacity .15s ease,
+    color .15s,
+    background .15s,
+    border-color .15s,
+    transform .12s;
+}
+
+.task-card:hover .task-delete-btn,
+.task-card:focus-within .task-delete-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.task-delete-btn:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  transform: scale(1.05);
+}
+
+.task-delete-btn:active {
+  transform: scale(0.95);
+}
+
+/* Keyboard users tabbing through cards need a clear focus ring. The card
+   itself isn't focusable, but the body button and checkbox are — so
+   show the delete button whenever the card is focused-within. */
+.task-delete-btn:focus-visible {
+  outline: none;
+  opacity: 1;
+  pointer-events: auto;
+  box-shadow: 0 0 0 2px var(--accent-teal);
+}
+
+/* While a delete is in flight, keep the button visible so the user can
+   see the spinner — overriding the default hover-reveal hiding. The
+   spinner animation gives the same "loading…" affordance as the
+   Sign-out and Save buttons. */
+.task-delete-btn.is-busy {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: progress;
+  color: var(--danger);
+}
+
+.task-delete-spinner {
+  animation: task-delete-spin 0.8s linear infinite;
+}
+
+@keyframes task-delete-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Add button ---------- */
+.add-btn {
+  margin-top: 10px;
+  background: var(--glass-bg-soft);
+  border: 1px dashed var(--glass-border-strong);
+  color: var(--fg-soft);
+  border-radius: 9px;
+  padding: 9px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    color .18s,
+    border-color .2s,
+    background .2s,
+    transform .18s,
+    box-shadow .2s;
+  position: relative;
+  z-index: 1;
+}
+
+.add-btn:hover {
+  color: var(--fg);
+  border-style: solid;
+  border-color: var(--accent-teal);
+  background: rgba(27, 163, 156, 0.14);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(27, 163, 156, 0.25);
+}
+
+/* ---------- Done view ---------- */
+.done-list,
+.done-empty {
+  position: relative;
+  z-index: 2;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  box-shadow: var(--glass-shadow);
+  color: var(--fg);
+  transition: background .35s, color .35s, border-color .35s;
+}
+
+.done-empty {
+  text-align: center;
+}
+
+.done-empty p { margin: 4px 0; }
+
+.muted {
+  color: var(--fg-faint);
+}
+
+.done-list--enter,
+.done-empty--enter {
+  animation: quadrant-rise .55s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--backdrop-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 100;
+  animation: fade-in .25s ease-out;
+  transition: background .35s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 20px 22px;
+
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  border-radius: 16px;
+  color: var(--fg);
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  box-shadow: var(--modal-shadow);
+
+  animation: modal-in .35s cubic-bezier(.2, .8, .2, 1);
+  transition: background .35s, color .35s, border-color .35s;
+}
+
+.modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--sheen) 0%, rgba(255, 255, 255, 0.00) 30%);
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(16px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--fg);
+  transition: color .35s ease;
+}
+
+.modal-close {
+  background: transparent;
+  border: 0;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color .15s, transform .15s;
+}
+.modal-close:hover {
+  color: var(--fg);
+  transform: scale(1.1);
+}
+
+.task-form {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Cross-fade when the user swaps between the task form and the in-modal
+   subject manager. Keying the wrappers by mode (in the JSX) forces React
+   to remount, which re-runs this animation on every switch. */
+@keyframes modal-section-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.task-form--enter,
+.subject-manager-enter {
+  animation: modal-section-enter .26s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+}
+
+.task-form .field {
+  display: grid;
+  gap: 6px;
+}
+
+.task-form .field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-soft);
+  transition: color .35s ease;
+}
+
+.task-form .input,
+.task-form .textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--fg);
+  font: inherit;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: border-color .15s, box-shadow .15s, background .15s, color .35s;
+}
+
+.task-form .input::placeholder { color: var(--fg-fainter); transition: color .35s; }
+
+.task-form .input:focus {
+  outline: none;
+  border-color: var(--accent-teal);
+  background: var(--input-bg);
+  box-shadow: 0 0 0 3px rgba(27, 163, 156, 0.22);
+}
+
+.task-form .input:disabled { opacity: .6; cursor: not-allowed; }
+
+.task-form select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--fg-muted) 50%),
+    linear-gradient(135deg, var(--fg-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
+}
+
+.task-form textarea.input { resize: vertical; min-height: 60px; }
+
+.task-form .error {
+  color: var(--danger);
+  font-size: 12px;
+  margin: 0;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.modal-footer-right {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background .18s,
+    color .18s,
+    border-color .18s,
+    opacity .15s,
+    transform .1s,
+    box-shadow .2s;
+}
+
+.btn-primary {
+  background: var(--accent-teal);
+  color: #ffffff;
+  border-color: var(--accent-teal);
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(27, 163, 156, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  animation: btn-glow 3.5s ease-in-out infinite;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-midnight);
+  border-color: var(--accent-midnight);
+  color: #ffffff;
+  box-shadow: 0 10px 26px rgba(29, 26, 85, 0.7);
+  animation-play-state: paused;
+}
+
+.btn-primary:active:not(:disabled) { transform: translateY(1px); }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; animation: none; }
+
+@keyframes btn-glow {
+  0%, 100% { box-shadow: 0 6px 18px rgba(27, 163, 156, 0.35); }
+  50%      { box-shadow: 0 8px 26px rgba(27, 163, 156, 0.65); }
+}
+
+.btn-secondary {
+  background: var(--glass-bg);
+  color: var(--fg);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background .18s, color .18s, border-color .18s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border-strong);
+}
+
+.btn-secondary:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ---------- Subject select (custom dropdown, replaces native <select>
+   so we can attach a hover-revealed delete × to each row) ---------- */
+.subject-select {
+  position: relative;
+  width: 100%;
+}
+
+.subject-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: border-color .15s, box-shadow .15s, background .15s, color .35s;
+}
+
+.subject-select-trigger:hover:not(:disabled) {
+  border-color: var(--glass-border-strong);
+}
+
+.subject-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--accent-teal);
+  box-shadow: 0 0 0 3px rgba(27, 163, 156, 0.22);
+}
+
+.subject-select-trigger:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.subject-select-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subject-select-value.is-placeholder {
+  color: var(--fg-fainter);
+}
+
+.subject-select-caret {
+  color: var(--fg-muted);
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: transform .15s, color .35s;
+}
+
+.subject-select-trigger[aria-expanded='true'] .subject-select-caret {
+  transform: rotate(180deg);
+  color: var(--fg);
+}
+
+.subject-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  border-radius: 12px;
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: var(--modal-shadow);
+  animation: subject-select-menu-in .18s cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes subject-select-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.subject-select-menu li {
+  list-style: none;
+}
+
+.subject-select-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+
+.subject-select-row:hover,
+.subject-select-row:focus-visible {
+  background: var(--glass-bg-strong);
+  outline: none;
+}
+
+.subject-select-row.is-selected {
+  background: rgba(27, 163, 156, 0.14);
+  color: var(--fg);
+}
+
+.subject-select-row.is-add {
+  color: var(--fg-soft);
+  border-top: 1px solid var(--divider);
+  margin-top: 2px;
+  padding-top: 8px;
+  border-radius: 0 0 8px 8px;
+}
+
+.subject-select-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hover-revealed × on each subject row. Mirrors the .task-delete-btn
+   pattern. The role="button" wrapper means we use :hover and
+   :focus-within on the parent row to reveal it. */
+.subject-select-delete {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--fg-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity .12s ease,
+    color .12s,
+    background .12s,
+    border-color .12s,
+    transform .12s;
+}
+
+.subject-select-row:hover .subject-select-delete,
+.subject-select-row:focus-within .subject-select-delete,
+.subject-select-delete:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.subject-select-delete:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  transform: scale(1.05);
+}
+
+.subject-select-delete:active {
+  transform: scale(0.95);
+}
+
+.subject-select-delete:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-teal);
+}
+
+/* ---------- Subject manager ---------- */
+.subject-manager {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Curated swatch row. Each button paints itself with its palette hex
+   via inline style; we just draw the ring, focus state, and the slot
+   size. The "Custom…" tile is the last item and renders a "⋯" glyph
+   on a neutral surface to invite a click. */
+.subject-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.subject-swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  /* `box-shadow` is used as the ring instead of `border` so the swatch
+     size doesn't shift by 4px when is-selected toggles. */
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform .12s ease,
+    box-shadow .15s ease;
+}
+
+.subject-swatch:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.subject-swatch.is-selected {
+  /* Inner ring of the panel color (so light-on-dark works) with an
+     outer teal halo matching the rest of the focus rings. */
+  box-shadow:
+    0 0 0 2px var(--modal-bg),
+    0 0 0 4px var(--accent-teal);
+}
+
+.subject-swatch:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--modal-bg),
+    0 0 0 4px var(--accent-teal);
+}
+
+.subject-swatch:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.subject-swatch.is-custom {
+  background: var(--glass-bg);
+  border-color: var(--glass-border-strong);
+  color: var(--fg-soft);
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.subject-swatch.is-custom:hover:not(:disabled) {
+  color: var(--fg);
+}
+
+.color-input {
+  /* Native color picker — sized to match the height of the other inputs.
+     Used inside the custom-color branch of the picker. */
+  margin-top: 8px;
+  width: 56px;
+  height: 36px;
+  padding: 2px;
+  cursor: pointer;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 8px;
+}
+
+.color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 6px;
+}
+
+.color-input::-moz-color-swatch {
+  border: none;
+  border-radius: 6px;
+}
+
+.subject-manager-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+/* ---------- Theme toggle ---------- */
+.theme-toggle {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--fg-soft);
+  cursor: pointer;
+  padding: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    background .25s,
+    border-color .25s,
+    color .25s,
+    transform .15s,
+    box-shadow .2s;
+}
+
+.theme-toggle:hover {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border-strong);
+  color: var(--fg);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.theme-toggle:active { transform: translateY(0); }
+
+.theme-toggle svg {
+  transition: transform .35s ease;
+}
+.theme-toggle:hover svg { transform: rotate(-15deg); }
+
+/* ---------- Header icon button (Settings, future affordances) ----------
+   Matches the ThemeToggle footprint so the two sit nicely next to
+   each other in the header. */
+.header-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--fg-soft);
+  cursor: pointer;
+  padding: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    background .25s,
+    border-color .25s,
+    color .25s,
+    transform .15s,
+    box-shadow .2s;
+}
+
+.header-icon-btn:hover {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border-strong);
+  color: var(--fg);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.header-icon-btn:active { transform: translateY(0); }
+
+.header-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-teal);
+}
+
+.header-icon-btn svg {
+  transition: transform .35s ease;
+}
+.header-icon-btn:hover svg { transform: rotate(40deg); }
+
+/* ---------- Settings modal ---------- */
+.settings-modal {
+  /* Slightly wider than the task modal so three sections fit on most
+     screens without excessive scrolling. */
+  max-width: 520px;
+}
+
+.settings-modal-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  /* Cap height so the modal scrolls internally instead of overflowing
+     on short viewports. The body is the scroll container. */
+  max-height: min(72vh, 640px);
+  overflow-y: auto;
+  padding-right: 4px; /* room for the scrollbar so it doesn't kiss content */
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.settings-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settings-section h3 {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg);
+  margin: 0;
+  transition: color .35s ease;
+}
+
+.settings-help {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin: 0;
+  transition: color .35s ease;
+}
+
+/* Inline field hint — used for the per-field validation message
+   shown when a value is typed but doesn't match the required
+   pattern. Smaller and quieter than .error so it reads as a
+   guide, not a hard failure. */
+.field-hint {
+  font-size: 11.5px;
+  color: var(--danger);
+  margin: 4px 0 0;
+}
+
+.field-hint[role='alert'] {
+  /* role=alert is a screen-reader hint, not a visual emphasis.
+     Keep the styling subdued. */
+}
+
+.settings-section-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* "Saved" inline confirmation — quieter than .error so it reads as a
+   neutral success line. */
+.settings-saved {
+  font-size: 12px;
+  color: var(--accent-teal);
+  margin: 0;
+}
+
+/* Section C — destructive area. A soft danger-tinted card so the
+   "Delete account" block reads as separate from the benign settings
+   above. */
+.settings-danger {
+  border: 1px solid var(--danger-border);
+  background: var(--danger-bg);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 4px;
+}
+
+.settings-danger h3 {
+  color: var(--danger);
+}
+
+.settings-delete-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-delete-check {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--fg-soft);
+  cursor: pointer;
+}
+
+.settings-delete-check input[type='checkbox'] {
+  accent-color: var(--danger);
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+/* Inputs inside the danger section use the same input rules but with a
+   subtle danger border so they don't look identical to the username
+   field above. */
+.settings-danger .input {
+  border-color: var(--danger-border);
+}
+.settings-danger .input:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(255, 138, 138, 0.18);
+}
+
+/* ---------- Confirm dialog (replaces window.confirm) ----------
+   Smaller than the task/settings modals — it's a quick yes/no, not
+   an editing surface. Inherits all the .modal-backdrop / .modal /
+   .modal-header / .modal-footer chrome so the glass + sheen look
+   stays consistent across every modal in the app.
+
+   The .modal base background is intentionally translucent so the glass
+   effect shows through, but on the dark dashboard's gradient/aurora
+   that 55% alpha reads as "just background" — the dialog disappears
+   into the page. Override with near-opaque colors here so the box
+   stands out as a real surface, and let the backdrop-filter still
+   handle the subtle blur of whatever sits behind it. */
+.confirm-dialog {
+  max-width: 380px;
+  padding: 18px 20px 16px;
+  /* Override .modal's translucent background. Dark theme: deep navy
+     at 96% alpha so the box reads as solid against the gradient. */
+  background: rgba(15, 14, 38, 0.96);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+:root[data-theme='light'] .confirm-dialog {
+  background: rgba(255, 255, 250, 0.97);
+  border-color: rgba(20, 25, 50, 0.18);
+}
+
+.confirm-dialog-body {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 18px;
+}
+
+.confirm-dialog-message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg-soft);
+  transition: color .35s ease;
+}
+
+/* The confirm footer is right-aligned by default (defined on
+   .modal-footer-right above). When the dialog mounts on narrow
+   viewports the buttons should still sit side-by-side — but with
+   enough gap to look intentional. */
+.confirm-dialog .modal-footer-right {
+  gap: 10px;
+}
+
+/* ---------- Toast viewport ----------
+   Fixed top-center, stacks downward. Errors use the danger palette;
+   success uses the teal accent. Sits above .modal-backdrop (z-index
+   100) so a save error inside an open TaskModal still surfaces.
+
+   Like the confirm dialog, .toast overrides the translucent modal
+   surface with a near-opaque color so the box reads as solid against
+   the dashboard's gradient/aurora. The viewport itself is
+   pointer-events: none so clicks pass through the gaps; individual
+   toasts re-enable pointer events so the close button works. */
+.toast-viewport {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 280px;
+  max-width: 460px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-radius: 10px;
+  background: rgba(15, 14, 38, 0.96);
+  border: 1px solid var(--glass-border);
+  color: var(--fg-soft);
+  box-shadow: var(--glass-shadow);
+  font-size: 13px;
+  line-height: 1.4;
+  animation: toast-enter 150ms ease-out;
+}
+
+:root[data-theme='light'] .toast {
+  background: rgba(255, 255, 250, 0.97);
+  border-color: rgba(20, 25, 50, 0.18);
+  color: var(--fg);
+}
+
+.toast--error {
+  border-color: var(--danger-border);
+}
+
+.toast--success {
+  border-color: rgba(27, 163, 156, 0.55);
+}
+
+.toast-message {
+  flex: 1;
+}
+
+.toast-close {
+  flex: 0 0 auto;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Drag-and-drop ---------- */
+
+/* Whole card is the drag handle. PointerSensor in Dashboard.tsx
+   uses an 8px activation distance so stationary clicks on the body
+   still reach onClick; the inner checkbox and delete × sit outside
+   the listeners element and use stopPropagation. See TaskCard.tsx
+   for the listeners/attributes spreading. */
+
+/* Dragging state. We don't put `transform` on .task-card here
+   because dnd-kit owns the transform during drag (for the
+   animation); layering our own would cause a snap. Opacity is
+   enough visual feedback. */
+.task-card.is-dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+/* The overlay clone gets the visual lift. dnd-kit puts a transform
+   on it via the framework; we add the rotation and shadow. */
+.drag-overlay {
+  transform: rotate(2deg);
+  box-shadow: var(--glass-shadow-hover);
+  cursor: grabbing;
+}
+.drag-overlay .task-card {
+  opacity: 1; /* override the dim the source card picks up */
+}
+
+/* Quadrant hover highlight when something is being dragged over it.
+   Used on the <section>; the per-item highlight inside is handled
+   by dnd-kit's transform. */
+.quadrant.is-drop-target {
+  border-color: var(--accent-teal);
+  box-shadow: var(--glass-shadow-hover);
+}
+
+/* Empty-quadrant drop zone. Quadrant.tsx always renders a <ul> so
+   dnd-kit can mount a SortableContext; when the quadrant has zero
+   active tasks we add this class to give the empty list a dashed
+   border so the user sees where to drop. */
+.task-list-empty-drop {
+  min-height: 80px;
+  border: 1.5px dashed var(--glass-border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+.task-list-empty-drop .quadrant-empty {
+  margin: 0;
+  color: var(--fg-muted);
+}
+.task-list-empty-drop.is-over {
+  border-color: var(--accent-teal);
+  background: var(--glass-bg-soft);
+}
+
+/* Non-empty quadrants: a thin dashed strip above the "+ Add task"
+   button is a dedicated drop zone. Drops onto it append the
+   dragged card to the end of the quadrant (same as dropping onto
+   the empty-quadrant drop zone, because both share the
+   `quadrant:<id>` id). The strip is visible only while dragging —
+   `:hover` would otherwise show it on every card. */
+.task-list-append-zone {
+  height: 36px;
+  margin-top: 6px;
+  border: 1.5px dashed transparent;
+  border-radius: 10px;
+  transition: border-color .18s ease, background .18s ease;
+}
+.task-list-append-zone.is-over {
+  border-color: var(--accent-teal);
+  background: var(--glass-bg-soft);
+}
+
+/* Inner interactive elements keep the standard pointer cursor so
+   the click target is obvious. The card body itself doesn't set a
+   cursor here — dnd-kit's PointerSensor flips it to "grabbing"
+   during drag via .is-dragging above. */
+.task-check,
+.task-body,
+.task-delete-btn {
+  cursor: pointer;
+}
+
+.task-check input {
+  cursor: pointer;
+}
+
+.task-check input:disabled,
+.task-delete-btn:disabled {
+  cursor: not-allowed;
+}
+
+/* ---------- View toggle ---------- */
+.view-toggle {
+  display: inline-flex;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 3px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 var(--sheen);
+  transition: background .35s, border-color .35s;
+}
+
+.view-tab {
+  background: transparent;
+  border: 0;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  border-radius: 7px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color .15s, background .2s, border-color .2s, box-shadow .25s, transform .2s;
+}
+
+.view-tab:hover {
+  color: var(--fg);
+}
+
+.view-tab.is-active {
+  background: var(--glass-bg-strong);
+  color: var(--fg);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow:
+    inset 0 1px 0 var(--sheen),
+    0 4px 14px rgba(0, 0, 0, 0.20);
+  animation: tab-pop .35s cubic-bezier(.2, .8, .2, 1);
+}
+
+.view-count {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--fg-soft);
+  transition: background .35s, color .35s;
+}
+
+.view-tab.is-active .view-count {
+  background: var(--glass-bg-strong);
+  color: var(--fg);
+}

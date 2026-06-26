@@ -1,0 +1,105 @@
+/* Default = light (ivory). The hook in useTheme.ts sets data-theme="dark"
+   on <html> if the user (or their OS) prefers dark, and "light" otherwise. */
+:root {
+  --bg: #FFFFF0;
+  --fg: #1a1a1a;
+  --muted: #6b7280;
+  --line: #e6e4d4;
+  --line-strong: #d4d1bf;
+  --accent: #1a1a1a;
+  --accent-fg: #ffffff;
+  --danger: #b91c1c;
+
+  --q-do-first:  #ef4444;
+  --q-schedule:  #3b82f6;
+  --q-delegate:  #f59e0b;
+  --q-eliminate: #6b7280;
+
+  --surface: #FFFFFA;
+  --surface-2: #F5F4E6;
+
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark tokens — applied when the user/system has chosen dark.
+   The hook sets data-theme="dark" as soon as the page mounts (or reads the
+   saved choice from localStorage), so the page doesn't flash light first. */
+:root[data-theme='dark'] {
+  --bg: #011635;
+  --fg: #f5f5f7;
+  --muted: #9ca3af;
+  --line: #0d2a52;
+  --line-strong: #163a6b;
+  --accent: #ffffff;
+  --accent-fg: #011635;
+  --danger: #ff8a8a;
+
+  --q-do-first:  #f87171;
+  --q-schedule:  #60a5fa;
+  --q-delegate:  #fbbf24;
+  --q-eliminate: #9ca3af;
+
+  --surface: #03203f;
+  --surface-2: #01183a;
+
+  color-scheme: dark;
+}
+
+/* Pre-mount fallback: if the user has no JS yet AND the OS prefers dark,
+   apply dark tokens to avoid a light flash. The hook will re-apply on
+   mount (no-op if it agrees) so this is purely visual. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #011635;
+    --fg: #f5f5f7;
+    --muted: #9ca3af;
+    --line: #0d2a52;
+    --line-strong: #163a6b;
+    --accent: #ffffff;
+    --accent-fg: #011635;
+    --danger: #ff8a8a;
+
+    --q-do-first:  #f87171;
+    --q-schedule:  #60a5fa;
+    --q-delegate:  #fbbf24;
+    --q-eliminate: #9ca3af;
+
+    --surface: #03203f;
+    --surface-2: #01183a;
+
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  transition: background .35s ease, color .35s ease;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}

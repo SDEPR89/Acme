@@ -1,0 +1,209 @@
+/* =============================================================
+   ConfirmingPage — same liquid-glass aesthetic as LoginPage,
+   shown briefly after the user clicks the email confirmation
+   link. Uses the same --login-* tokens so the two screens
+   feel like one continuous flow.
+   ============================================================= */
+
+.confirming-page {
+  /* Re-declare the tokens locally so this file works standalone
+     even if LoginPage's :root block is ever scoped tighter. The
+     values mirror LoginPage exactly. */
+  --confirming-bg-top:    #011635;
+  --confirming-bg-bottom: #000000;
+  --confirming-card-bg:   rgba(255, 255, 255, 0.10);
+  --confirming-card-border: rgba(255, 255, 255, 0.22);
+  --confirming-card-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+  --confirming-fg:        #ffffff;
+  --confirming-fg-soft:   rgba(245, 245, 247, 0.72);
+  --confirming-fg-muted:  rgba(245, 245, 247, 0.65);
+  --confirming-chip-bg:   rgba(255, 255, 255, 0.16);
+  --confirming-chip-fg:   #f5f5f7;
+  --confirming-chip-border: rgba(255, 255, 255, 0.25);
+  --confirming-danger:    #ff8a8a;
+
+  min-height: 100vh;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: linear-gradient(180deg, var(--confirming-bg-top) 0%, var(--confirming-bg-top) 45%, var(--confirming-bg-bottom) 100%);
+  color: var(--confirming-fg);
+  overflow: hidden;
+}
+
+:root[data-theme='light'] .confirming-page {
+  --confirming-bg-top:    #FFFFF0;
+  --confirming-bg-bottom: #e9e7d4;
+  --confirming-card-bg:   rgba(255, 255, 255, 0.55);
+  --confirming-card-border: rgba(255, 255, 255, 0.85);
+  --confirming-card-shadow:
+    0 20px 60px rgba(20, 25, 50, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.45);
+  --confirming-fg:        #1a1a1a;
+  --confirming-fg-soft:   rgba(26, 26, 26, 0.72);
+  --confirming-fg-muted:  rgba(26, 26, 26, 0.62);
+  --confirming-chip-bg:   rgba(255, 255, 255, 0.70);
+  --confirming-chip-fg:   #1a1a1a;
+  --confirming-chip-border: rgba(20, 25, 50, 0.14);
+  --confirming-danger:    #b91c1c;
+  background: linear-gradient(180deg, #FFFFF0 0%, #FFFFF0 45%, #efeccf 100%);
+}
+
+/* ---------- Header ---------- */
+.confirming-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 32px;
+  animation: confirming-fade-down .55s ease-out both;
+}
+
+.confirming-page-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--confirming-fg);
+}
+
+.confirming-page-header .brand-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--confirming-chip-bg);
+  color: var(--confirming-chip-fg);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--confirming-chip-border);
+}
+
+@keyframes confirming-fade-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Centered card ---------- */
+.confirming-page-main {
+  display: grid;
+  place-items: center;
+  padding: 24px 32px;
+}
+
+.confirming-card {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  padding: 40px 32px 32px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: var(--confirming-card-bg);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid var(--confirming-card-border);
+  box-shadow: var(--confirming-card-shadow);
+  color: var(--confirming-fg);
+  animation: confirming-card-enter .65s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+@keyframes confirming-card-enter {
+  from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- Spinner ---------- */
+.confirming-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--confirming-fg-soft);
+  border-top-color: var(--confirming-fg);
+  border-radius: 50%;
+  animation: confirming-spin .85s linear infinite;
+  margin-bottom: 22px;
+}
+.confirming-spinner.is-hidden {
+  display: none;
+}
+
+@keyframes confirming-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirming-spinner { animation-duration: 2s; }
+}
+
+/* ---------- Error icon (timeout state) ---------- */
+.confirming-error-icon {
+  color: var(--confirming-danger);
+  margin-bottom: 18px;
+}
+
+/* ---------- Copy ---------- */
+.confirming-title {
+  margin: 0 0 10px;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--confirming-fg);
+}
+
+.confirming-helper {
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--confirming-fg-muted);
+  /* Smooth crossfade between messages — keeps the spinner->text
+     handoff from feeling abrupt. */
+  transition: color .35s ease;
+}
+
+/* ---------- Buttons ---------- */
+.confirming-back-btn {
+  /* .btn-primary matches the primary CTA in LoginPage.css; we
+     scope it under .confirming-card so it doesn't leak to the
+     rest of the app if .btn-primary isn't defined globally. */
+  padding: 10px 22px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #1ba39c 0%, #178a85 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(27, 163, 156, 0.35);
+  transition: transform .12s ease, box-shadow .2s ease, filter .2s ease;
+}
+.confirming-back-btn:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 8px 26px rgba(27, 163, 156, 0.55);
+}
+.confirming-back-btn:active {
+  transform: translateY(1px);
+}
+
+.confirming-cancel-link {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  color: var(--confirming-fg-muted);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color .2s ease;
+}
+.confirming-cancel-link:hover {
+  color: var(--confirming-fg);
+}
