@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { supabase } from './lib/supabase';
 import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './components/Dashboard';
@@ -341,9 +342,12 @@ export default function App() {
   // a new password before granting access to the dashboard.
   if (mode === 'reset') {
     return (
-      <ConfirmProvider>
-        <ResetPassword onComplete={onResetComplete} onCancel={onResetCancel} />
-      </ConfirmProvider>
+      <>
+        <ConfirmProvider>
+          <ResetPassword onComplete={onResetComplete} onCancel={onResetCancel} />
+        </ConfirmProvider>
+        <Analytics />
+      </>
     );
   }
 
@@ -353,40 +357,49 @@ export default function App() {
   // than flashing the login screen.
   if (mode === 'confirming') {
     return (
-      <ConfirmProvider>
-        <ConfirmingPage
-          sessionEstablished={confirmingSessionSeen}
-          timedOut={confirmingTimedOut}
-          onCancel={() => {
-            setMode('app');
-            setConfirmingTimedOut(false);
-          }}
-        />
-      </ConfirmProvider>
+      <>
+        <ConfirmProvider>
+          <ConfirmingPage
+            sessionEstablished={confirmingSessionSeen}
+            timedOut={confirmingTimedOut}
+            onCancel={() => {
+              setMode('app');
+              setConfirmingTimedOut(false);
+            }}
+          />
+        </ConfirmProvider>
+        <Analytics />
+      </>
     );
   }
 
   if (!user) {
     return (
-      <ConfirmProvider>
-        <LoginPage />
-      </ConfirmProvider>
+      <>
+        <ConfirmProvider>
+          <LoginPage />
+        </ConfirmProvider>
+        <Analytics />
+      </>
     );
   }
 
   return (
-    <ConfirmProvider>
-      <Dashboard
-        userId={user.id}
-        userEmail={user.email}
-        userUsername={user.username}
-        userDisplayUsername={user.displayUsername}
-        isAnonymous={user.isAnonymous}
-        onSignOut={onSignOut}
-        onUsernameUpdated={handleUsernameUpdated}
-        onAccountDeleted={handleAccountDeleted}
-        onAccountUpgraded={handleAccountUpgraded}
-      />
-    </ConfirmProvider>
+    <>
+      <ConfirmProvider>
+        <Dashboard
+          userId={user.id}
+          userEmail={user.email}
+          userUsername={user.username}
+          userDisplayUsername={user.displayUsername}
+          isAnonymous={user.isAnonymous}
+          onSignOut={onSignOut}
+          onUsernameUpdated={handleUsernameUpdated}
+          onAccountDeleted={handleAccountDeleted}
+          onAccountUpgraded={handleAccountUpgraded}
+        />
+      </ConfirmProvider>
+      <Analytics />
+    </>
   );
 }
