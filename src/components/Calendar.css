@@ -78,7 +78,7 @@
 
 .calendar-cell {
   position: relative;
-  min-height: 96px;
+  min-height: 104px;
   padding: 0.4rem 0.45rem 0.45rem;
   border: 1px solid var(--glass-border);
   border-radius: 8px;
@@ -124,35 +124,121 @@
   padding: 4px 0 2px;
 }
 
+/* Each dot is wrapped in a positioning span so the hover tooltip
+   can anchor against it without breaking the cell's flex layout. */
+.calendar-task-dot-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
 .calendar-task-dot {
-  /* Larger than a typical 8px dot — 14px hits the WCAG 24x24 touch
-     target when you include its border + 4px padding around it.
-     Easy to grab with mouse, comfortable on touch. */
-  width: 14px;
-  height: 14px;
+  /* 18px hits the WCAG 24x24 touch target when you include its
+     border + the cell's 3px padding around it. Big enough to grab
+     with mouse, comfortable on touch, and visible against any cell
+     background. */
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   padding: 0;
   margin: 0;
   /* `background` (not just backgroundColor) so any user-agent
      buttonface styling is overridden. The inline style on the dot
-     still wins because it carries `!important`-equivalent specificity,
-     but explicit `background: transparent` here makes the base layer
-     predictable across browsers. */
+     still wins by specificity, but explicit `background: transparent`
+     here makes the base layer predictable across browsers. */
   background: transparent;
   flex-shrink: 0;
-  /* Subtle drop shadow so the dot reads against the cell background
-     even when the quadrant color happens to be near-black. */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  /* The fill color is set via inline style on each dot so it can pull
-     from the live --q-<quadrant> variable. The class is here for any
-     per-quadrant overrides (none today, but keeps the door open). */
+  /* Drop shadow so the dot reads against the cell background even
+     when the quadrant color is dark. */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.calendar-task-dot:hover,
+.calendar-task-dot:focus-visible {
+  transform: scale(1.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 .calendar-task-dot:focus-visible {
   outline: 2px solid var(--accent-teal, #5eead4);
   outline-offset: 2px;
-  border-color: var(--accent-teal, #5eead4);
+}
+
+/* Hover tooltip — shows the task title (and quadrant) in a styled
+   popover. Anchored above the dot, falls below if there's no room
+   in the top row of the grid. CSS-only, no JS portal. */
+.calendar-task-dot-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 120px;
+  max-width: 220px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--tooltip-bg, rgba(15, 15, 18, 0.95));
+  color: var(--tooltip-fg, #fff);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+.calendar-task-dot-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--tooltip-bg, rgba(15, 15, 18, 0.95));
+}
+
+.calendar-task-dot-wrap:hover .calendar-task-dot-tooltip,
+.calendar-task-dot-wrap:focus-within .calendar-task-dot-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* If the tooltip is on a cell in the top two rows of the grid, flip
+   it below the dot. The calendar-grid is the .calendar-grid parent —
+   we use a class on the cell to flag this when the cell is in the
+   upper rows. The .calendar-cell--tooltip-below modifier is applied
+   in Calendar.tsx for cells in rows 0–1. */
+.calendar-cell--tooltip-below .calendar-task-dot-tooltip {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+
+.calendar-cell--tooltip-below .calendar-task-dot-tooltip::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--tooltip-bg, rgba(15, 15, 18, 0.95));
+}
+
+/* Inside the tooltip: title (truncated with ellipsis) + a small
+   quadrant label below. */
+.calendar-task-dot-tooltip-title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.calendar-task-dot-tooltip-meta {
+  display: block;
+  font-size: 0.7rem;
+  opacity: 0.7;
+  text-transform: capitalize;
 }
 
 .calendar-overflow {

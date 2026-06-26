@@ -79,9 +79,12 @@ interface DayCellProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
   onAdd: (isoDate: string) => void;
+  // Cells in the top two rows of the grid flip their hover tooltips
+  // below the dots so they don't get clipped by the calendar header.
+  tooltipBelow?: boolean;
 }
 
-function DayCell({ date, isoDate, inMonth, isToday, tasks, onTaskClick, onAdd }: DayCellProps) {
+function DayCell({ date, isoDate, inMonth, isToday, tasks, onTaskClick, onAdd, tooltipBelow }: DayCellProps) {
   // Each cell is a droppable target. We disable it while a reorder
   // RPC is mid-flight (the parent passes reorderDisabled through
   // here indirectly — the Dashboard's existing reorderBusy flag
@@ -99,6 +102,7 @@ function DayCell({ date, isoDate, inMonth, isToday, tasks, onTaskClick, onAdd }:
     !inMonth && 'calendar-cell--out',
     isToday && 'calendar-cell--today',
     isOver && 'calendar-cell--over',
+    tooltipBelow && 'calendar-cell--tooltip-below',
   ]
     .filter(Boolean)
     .join(' ');
@@ -169,17 +173,27 @@ function TaskDot({ task, onClick }: TaskDotProps) {
   };
 
   return (
-    <button
-      ref={setNodeRef}
-      type="button"
-      className={`calendar-task-dot calendar-task-dot--${task.quadrant as Quadrant}`}
-      style={style}
-      title={task.title}
-      aria-label={`${task.title} (${task.quadrant})`}
-      onClick={handleClick}
-      {...listeners}
-      {...attributes}
-    />
+    <span className="calendar-task-dot-wrap">
+      <button
+        ref={setNodeRef}
+        type="button"
+        className={`calendar-task-dot calendar-task-dot--${task.quadrant as Quadrant}`}
+        style={style}
+        aria-label={`${task.title} (${task.quadrant})`}
+        onClick={handleClick}
+        {...listeners}
+        {...attributes}
+      />
+      {/* CSS-only hover tooltip — shows the task title and quadrant.
+          Native `title` attribute is intentionally not used because the
+          1s OS-default delay and look are inconsistent across browsers. */}
+      <span className="calendar-task-dot-tooltip" role="tooltip">
+        <span className="calendar-task-dot-tooltip-title">{task.title}</span>
+        <span className="calendar-task-dot-tooltip-meta">
+          {task.quadrant.replace('_', ' ')}
+        </span>
+      </span>
+    </span>
   );
 }
 
@@ -266,8 +280,13 @@ export function Calendar({ tasks, onTaskClick, onAddOnDate }: Props) {
         ))}
       </div>
       <div className="calendar-grid" role="grid">
-        {cells.map(({ date, inMonth }) => {
+        {cells.map(({ date, inMonth }, idx) => {
           const isoDate = toIsoDate(date);
+          // Rows 0 and 1 are the first two weeks of the grid — their
+          // tooltips would be clipped by the calendar header, so they
+          // flip below the dots. With 7 cells per row, idx / 7 gives
+          // the row.
+          const row = Math.floor(idx / 7);
           return (
             <DayCell
               key={isoDate}
@@ -278,6 +297,7 @@ export function Calendar({ tasks, onTaskClick, onAddOnDate }: Props) {
               tasks={tasksByDate.get(isoDate) ?? []}
               onTaskClick={onTaskClick}
               onAdd={onAddOnDate}
+              tooltipBelow={row < 2}
             />
           );
         })}
