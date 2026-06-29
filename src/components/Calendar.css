@@ -304,3 +304,30 @@
     font-size: 0.75rem;
   }
 }
+
+/* ---------- Light-mode contrast fixes ----------
+   The dashboard-wide theme tokens (declared in Dashboard.css) are
+   tuned for both themes globally, but the calendar leans on glass
+   surfaces (cell borders, soft cell backgrounds) that wash out on
+   the ivory #FFFFF0 page in light mode — the 10% dark glass-border
+   becomes invisible, 40% white soft wash barely tints the cells,
+   and the medium-gray eliminate-dot loses contrast.
+
+   Scope the override to the calendar so the rest of the app keeps
+   its existing light-mode tokens. */
+[data-theme='light'] .calendar {
+  --glass-bg-soft:       rgba(20, 25, 50, 0.035);
+  --glass-bg:            rgba(255, 255, 255, 0.85);
+  --glass-bg-strong:     rgba(20, 25, 50, 0.06);
+  --glass-border:        rgba(20, 25, 50, 0.22);
+  --glass-border-strong: rgba(20, 25, 50, 0.40);
+  --q-eliminate:         #4b5563;
+  --fg-muted:            rgba(26, 26, 26, 0.78);
+}
+
+/* Out-of-month days: the dark-theme 0.35 opacity is fine on midnight
+   but vanishes against the ivory cells in light mode. Bump it for
+   light mode so the leading/trailing days are still visible. */
+[data-theme='light'] .calendar-cell--out {
+  opacity: 0.55;
+}
