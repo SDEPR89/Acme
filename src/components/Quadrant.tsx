@@ -65,10 +65,26 @@ export function Quadrant({
   //     drop affordance — the user has to aim above the last
   //     card to land the drop at the bottom.
   const droppableId = `quadrant:${id}`;
+  // Marker so the dashboard's collision strategy can boost the empty
+  // <ul>'s effective hit area. Without this, the dragged card (still
+  // at its source rect, only translating past the 8px activation
+  // distance) never covers the empty list's rect and pointerWithin
+  // misses the drop zone entirely — leaving the user unable to drop
+  // into an empty quadrant. The 24px padding mirrors the visual
+  // dashed border so the hit area matches what the user sees.
+  const emptyListData = { kind: 'empty-quadrant' as const };
   const {
     setNodeRef: setEmptyListRef,
     isOver: isOverEmpty,
-  } = useDroppable({ id: droppableId, disabled: reorderDisabled });
+  } = useDroppable({
+    id: droppableId,
+    disabled: reorderDisabled,
+    // Empty-quadrant marker — read by the dashboard's collision
+    // strategy to widen the effective hit area by 24px so the drop
+    // registers the moment the cursor enters the dashed border
+    // instead of waiting for the dragged card to translate.
+    data: isEmpty ? emptyListData : undefined,
+  });
   const {
     setNodeRef: setAppendZoneRef,
     isOver: isOverAppend,

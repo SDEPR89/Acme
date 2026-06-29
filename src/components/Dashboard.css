@@ -696,10 +696,18 @@
   border: 1px solid var(--glass-border);
   border-radius: 9px;
   background: var(--glass-bg-soft);
+  /* `transform` is here so siblings slide smoothly when a sibling
+     is dragged over them (useSortable animates the moved card's
+     transform; without a transform transition, the slide is
+     instant). `will-change: transform` is set ONLY while a card is
+     being dragged (see `.task-card.is-dragging` below) and rolled
+     back to `auto` afterwards so we don't pay for a compositor
+     layer on every static card. */
   transition:
     border-color .18s ease,
     background .18s ease,
-    box-shadow .18s ease;
+    box-shadow .18s ease,
+    transform 200ms cubic-bezier(.2,.8,.2,1);
   position: relative;
 }
 
@@ -1908,18 +1916,36 @@
 /* Dragging state. We don't put `transform` on .task-card here
    because dnd-kit owns the transform during drag (for the
    animation); layering our own would cause a snap. Opacity is
-   enough visual feedback. */
+   enough visual feedback. `will-change: transform` is added so the
+   compositor knows to GPU-accelerate the card's own (zero) transform
+   while the DragOverlay slides above it. */
 .task-card.is-dragging {
   opacity: 0.4;
   cursor: grabbing;
+  will-change: transform;
 }
 
+/* A different card being dragged next to this one — we don't need
+   our own will-change layer (we're not transforming), but the
+   sibling slide will animate because of the `transform` entry in
+   the base .task-card transition. */
+
 /* The overlay clone gets the visual lift. dnd-kit puts a transform
-   on it via the framework; we add the rotation and shadow. */
+   on the wrapper via the framework (translate by the cursor delta);
+   we keep this rule to nothing more than the drop shadow so the
+   overlay reads as "lifted" without rotating. Rotation can offset
+   the grab point from the cursor by a few pixels on long cards,
+   which made cross-quadrant drops feel imprecise. */
 .drag-overlay {
-  transform: rotate(2deg);
+  /* Box-shadow lift signals "carried" without rotating the card,
+     so the grab point the user clicked stays exactly under the
+     cursor. */
   box-shadow: var(--glass-shadow-hover);
   cursor: grabbing;
+  /* Lift above sibling cards so the overlay can't be covered by
+     a card that's between the cursor and the source. */
+  position: relative;
+  z-index: 2;
 }
 .drag-overlay .task-card {
   opacity: 1; /* override the dim the source card picks up */

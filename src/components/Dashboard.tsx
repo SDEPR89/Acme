@@ -26,6 +26,18 @@ import {
   type CollisionDetection,
 } from '@dnd-kit/core';
 import type { DragStartEvent, DragEndEvent, DragOverEvent, DragCancelEvent } from '@dnd-kit/core';
+
+/**
+ * Pixels of effective hit-area padding around an empty quadrant's
+ * `<ul>`. The empty list's measured rect is the dashed-border box
+ * itself, so without this boost the dragged card (which only moves
+ * past the 8px activation distance and thus still overlaps its source
+ * rect) would need to translate *into* the empty box to register a
+ * collision. 24px matches the visual breathing room around the
+ * dashed border so the user's mental model ("I'm hovering the empty
+ * box → it should accept the drop") maps to the actual hit area.
+ */
+const EMPTY_QUADRANT_HIT_PADDING = 24;
 import './Dashboard.css';
 import {
   CALENDAR_TASK_ID_PREFIX,
@@ -185,12 +197,31 @@ export function Dashboard({
   }, [liveTasks]);
 
   // 3-tier collision strategy (the canonical dnd-kit multiple-
-  // containers chain). `pointerWithin` wins when the pointer is over
-  // a card (highest fidelity). `rectIntersection` catches the empty
-  // quadrant <ul> even when its child is also a droppable, and the
-  // append strip when the pointer sits below the last card.
-  // `closestCenter` is the fallback for the in-list reorder case
-  // (pointer between two cards, no direct hit).
+  // containers chain) PLUS an empty-quadrant boost so the user can
+  // drop into an empty quadrant the moment the cursor crosses the
+  // dashed border.
+  //
+  //   1. Empty-quadrant hit-area boost: any droppable carrying the
+  //      `kind: 'empty-quadrant'` marker (Quadrant.tsx attaches it
+  //      to the empty <ul> only) gets its rect inflated by
+  //      EMPTY_QUADRANT_HIT_PADDING. If the cursor is inside that
+  //      inflated rect, return it as the collision. This is what
+  //      makes dropping into an empty quadrant work — without it,
+  //      `pointerWithin` misses because the dragged card's rect
+  //      hasn't translated yet, and `rectIntersection` misses
+  //      because the cursor is over the padding around the dashed
+  //      border rather than the border itself.
+  //
+  //   2. Pointer-direct: highest fidelity, picks the card under
+  //      the cursor including across quadrant boundaries.
+  //
+  //   3. Rect intersection: catches the empty-quadrant <ul> (when
+  //      the cursor is right on top of it, not in the padding) and
+  //      the append strip when the pointer sits over the dashed
+  //      border rather than a card body.
+  //
+  //   4. Closest center: in-list reorder when the pointer is
+  //      between two cards and nothing else is under it.
   const collisionDetection: CollisionDetection = useCallback(
     (args) => {
       // If the pointer just moved a card across containers, dnd-kit
@@ -200,7 +231,40 @@ export function Dashboard({
         return [{ id: lastOverIdRef.current }];
       }
 
-      // 1) Pointer-direct: highest fidelity, picks the card under
+      // 1) Empty-quadrant boost. Walk droppableContainers once and
+      //    synthesize an inflated rect for any 'empty-quadrant'
+      //    droppable. If the cursor (args.pointerCoordinates) falls
+      //    inside the inflated rect, return that droppable
+      //    immediately. Cheaper than re-running rectIntersection
+      //    with a synthesized rect map.
+      const pointer = args.pointerCoordinates;
+      if (pointer) {
+        for (const container of args.droppableContainers) {
+          if (container.data.current?.kind !== 'empty-quadrant') continue;
+          const rect = args.droppableRects.get(container.id);
+          if (!rect) continue;
+          const pad = EMPTY_QUADRANT_HIT_PADDING;
+          const inflated = {
+            top: rect.top - pad,
+            left: rect.left - pad,
+            right: rect.right + pad,
+            bottom: rect.bottom + pad,
+            width: rect.width + pad * 2,
+            height: rect.height + pad * 2,
+          };
+          if (
+            pointer.x >= inflated.left &&
+            pointer.x <= inflated.right &&
+            pointer.y >= inflated.top &&
+            pointer.y <= inflated.bottom
+          ) {
+            lastOverIdRef.current = String(container.id);
+            return [{ id: container.id }];
+          }
+        }
+      }
+
+      // 2) Pointer-direct: highest fidelity, picks the card under
       //    the cursor including across quadrant boundaries.
       const pointerHits = pointerWithin(args);
       if (pointerHits.length > 0) {
@@ -209,9 +273,10 @@ export function Dashboard({
         return [first];
       }
 
-      // 2) Rect intersection: catches the empty-quadrant <ul> and the
-      //    append strip when the pointer sits over the dashed border
-      //    rather than a card body.
+      // 3) Rect intersection: catches the empty-quadrant <ul>
+      //    (when the cursor is right on top of it, not in the
+      //    padding) and the append strip when the pointer sits
+      //    over the dashed border rather than a card body.
       const rectHits = rectIntersection(args);
       if (rectHits.length > 0) {
         const first = getFirstCollision(rectHits, 'id');
@@ -221,7 +286,7 @@ export function Dashboard({
         }
       }
 
-      // 3) Closest center: in-list reorder when the pointer is
+      // 4) Closest center: in-list reorder when the pointer is
       //    between two cards and nothing else is under it.
       const centerHits = closestCenter(args);
       if (centerHits.length > 0) {
@@ -723,7 +788,24 @@ export function Dashboard({
                 onAddOnDate={handleAddOnDate}
               />
             )}
-            <DragOverlay>
+            <DragOverlay
+              // Bump z-index above sibling cards so the overlay
+              // can't be covered by a card that's between the cursor
+              // and the source. dnd-kit sets zIndex: 999 by default;
+              // we override with a higher value so the overlay is
+              // unambiguously on top during cross-quadrant drags.
+              zIndex={1000}
+              // Smooth snap-back on invalid drops. dnd-kit's default
+              // dropAnimation is 250ms ease; we keep that timing but
+              // use the same easing curve as the rest of the app
+              // (cubic-bezier(.2,.8,.2,1) — a soft "ease-out-back"
+              // feel) so the snap-back reads as part of the same
+              // motion vocabulary.
+              dropAnimation={{
+                duration: 200,
+                easing: 'cubic-bezier(.2,.8,.2,1)',
+              }}
+            >
               {activeDragId ? (
                 <div className="drag-overlay">
                   {(() => {

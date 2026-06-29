@@ -1,4 +1,4 @@
-import type { MouseEvent, KeyboardEvent } from 'react';
+import type { MouseEvent, KeyboardEvent, CSSProperties } from 'react';
 import type { Task, Subject } from '../types';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -56,9 +56,16 @@ export function TaskCard({
     id: task.id,
     disabled: dragDisabled,
   });
-  const style = {
+  const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
+    // Promote to its own compositor layer only while this specific
+    // card is being dragged — not for any other card. The
+    // `.task-card.is-dragging { will-change: transform }` CSS rule
+    // handles siblings, but the dragged card itself uses inline
+    // style so dnd-kit's transform update lands on a layer the
+    // compositor owns.
+    ...(isDragging ? { willChange: 'transform' as const } : {}),
   };
   const className = `task-card${task.completed_at ? ' is-done' : ''}${isDragging ? ' is-dragging' : ''}`;
 
