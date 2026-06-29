@@ -254,7 +254,13 @@ export function Dashboard({
         userDisplayUsername={userDisplayUsername}
         userUsername={userUsername}
         userEmail={userEmail}
+        // The mobile bottom nav already exposes a Settings tab, so the
+        // header gear would duplicate it. Skip the button entirely on
+        // mobile (`!== true` keeps it visible during the first frame
+        // before useMediaQuery resolves to true; otherwise the gear
+        // would flash in then disappear).
         onOpenSettings={() => setSettingsOpen(true)}
+        isMobile={isMobile !== true}
       />
 
       <DashboardToolbar
@@ -380,6 +386,13 @@ interface DashboardHeaderProps {
   userDisplayUsername: string | null;
   userUsername: string | null;
   userEmail: string | null;
+  // `isMobile: true` means we're below the mobile breakpoint and the
+  // bottom-nav Settings tab is the only settings entry — the header
+  // gear is hidden in that case. `false` means desktop; `null` (the
+  // first-frame state before useMediaQuery resolves) renders the gear
+  // to avoid a flash. The prop is plumbed through rather than reading
+  // useMediaQuery locally so the breakpoint stays owned by Dashboard.
+  isMobile: boolean | null;
   onOpenSettings: () => void;
 }
 
@@ -388,6 +401,7 @@ function DashboardHeader({
   userDisplayUsername,
   userUsername,
   userEmail,
+  isMobile,
   onOpenSettings,
 }: DashboardHeaderProps) {
   const { theme, toggle: toggleTheme } = useTheme();
@@ -404,18 +418,20 @@ function DashboardHeader({
             : userDisplayUsername ?? userUsername ?? userEmail}
         </span>
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
-        <button
-          type="button"
-          className="header-icon-btn header-settings-btn"
-          onClick={onOpenSettings}
-          aria-label="Open settings"
-          title="Settings"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </svg>
-        </button>
+        {isMobile !== true && (
+          <button
+            type="button"
+            className="header-icon-btn header-settings-btn"
+            onClick={onOpenSettings}
+            aria-label="Open settings"
+            title="Settings"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+        )}
       </div>
     </header>
   );

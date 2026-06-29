@@ -161,10 +161,10 @@
   .dashboard { padding: 16px; }
 
   /* The header gear duplicates the Settings entry in the bottom nav,
-     so hide it on mobile. Keeps the header row from getting crowded
-     with the theme toggle + sign-out + display name already in place,
-     and avoids two ways to open the same modal. The desktop layout
-     still relies on this button. */
+     so hide it on mobile. The primary guard is now in the JSX
+     (DashboardHeader omits the button entirely when isMobile), but
+     leaving this rule here as belt-and-braces in case anyone wires
+     the button back up without the JSX guard. */
   .header-settings-btn {
     display: none;
   }
