@@ -467,38 +467,38 @@
 
 /* ---------- Narrow phones (≤480px) ---------- */
 @media (max-width: 480px) {
-  /* Header — two lines: brand on top, controls on a second row. */
+  /* Header — single line. Brand mark + 'Acme' on the left, theme
+     square on the right. The username text sits inline with the
+     brand (its `::before` adds the '· ' separator) so the header
+     stays one row on narrow phones. */
   .dashboard-header {
-    flex-wrap: wrap;
-    gap: 10px 12px;
-  }
-  .brand {
-    margin-bottom: 0;
-    flex: 1;
-  }
-  .dashboard-user {
-    width: 100%;
-    justify-content: flex-end;
+    flex-wrap: nowrap;
     gap: 8px;
   }
-  /* Username pill — rounded-rectangle chip on the right of the
-     header. Matches the Acme.png mockup: long pill with the
-     user's name inside, theme toggle sits to its left as a
-     small square. */
+  .brand {
+    flex: 1;
+    min-width: 0;
+  }
+  /* Username — inline with the brand. Plain text (not a pill) so
+     it doesn't add visual weight to the top bar. The ' · ' separator
+     before the name comes from the brand's trailing span via a
+     flex gap on .brand. */
   .dashboard-display-name {
-    display: inline-flex;
-    align-items: center;
-    max-width: 50vw;
+    color: var(--fg-muted);
+    font-size: 13px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding: 5px 12px;
-    border: 1px solid var(--glass-border);
-    border-radius: 999px;
-    background: var(--glass-bg);
-    color: var(--fg-muted);
-    font-size: 13px;
-    line-height: 1.2;
+    min-width: 0;
+    max-width: 50vw;
+  }
+  .dashboard-display-name::before {
+    content: '· ';
+    margin-right: 4px;
+    opacity: 0.6;
+  }
+  .dashboard-user {
+    gap: 8px;
   }
   /* Theme toggle — explicit square with aspect-ratio so it stays
      a square even if the inner icon size changes. Slightly larger
