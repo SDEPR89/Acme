@@ -32,6 +32,14 @@ interface Props {
   isAnonymous: boolean;
   onClose: () => void;
   onUsernameUpdated: (newDisplayUsername: string) => void;
+  // Sign out from inside the Settings modal. The Dashboard used to
+  // expose this in the header, but we consolidated it here so mobile
+  // (which has no header sign-out button) and desktop share the same
+  // path. `onSignOut` already resets editing/settings state in the
+  // Dashboard; we close the modal here for the same reason — the
+  // whole dashboard unmounts anyway, but explicit close keeps the
+  // intent obvious.
+  onSignOut: () => void;
   onAccountDeleted: () => void;
   // Fired after the upgrade RPC succeeds — App.tsx flips the local
   // user out of anonymous mode so the header / settings refresh.
@@ -59,6 +67,7 @@ export function SettingsModal({
   isAnonymous,
   onClose,
   onUsernameUpdated,
+  onSignOut,
   onAccountDeleted,
   onAccountUpgraded,
 }: Props) {
@@ -100,6 +109,25 @@ export function SettingsModal({
         </header>
 
         <div className="settings-modal-body">
+          {/* Session section — sits at the top of the modal because
+              sign-out is a frequent, non-destructive action that
+              users want one tap from. We contrast it with Delete
+              account (which sits in a danger-tinted card at the
+              bottom) so the two destructive-feeling actions don't
+              read as equivalent. For anonymous users, signing out
+              also works — it clears the anonymous session; their
+              tasks/subjects survive in the DB, but they'll need to
+              "Continue as guest" again from a fresh browser session
+              to see them (a future improvement could merge them
+              when the user re-signs-in from the same device). */}
+          <SessionSection
+            userEmail={userEmail}
+            currentUsername={currentUsername}
+            currentDisplayUsername={currentDisplayUsername}
+            isAnonymous={isAnonymous}
+            onClose={onClose}
+            onSignOut={onSignOut}
+          />
           {isAnonymous ? (
             <UpgradeAccountSection
               onAccountUpgraded={onAccountUpgraded}
@@ -123,6 +151,86 @@ export function SettingsModal({
         </div>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Section 0 — Session (sign out)
+// ---------------------------------------------------------------------------
+// Lives at the top of the modal because it's a frequent, non-destructive
+// action. We render the current account identity (email for real users,
+// "Guest" + upgrade CTA for anonymous users) above the sign-out button so
+// the user can confirm what they're signing out of before tapping.
+
+interface SessionSectionProps {
+  userEmail: string | null;
+  currentUsername: string | null;
+  currentDisplayUsername: string | null;
+  isAnonymous: boolean;
+  onClose: () => void;
+  onSignOut: () => void;
+}
+
+function SessionSection({
+  userEmail,
+  currentUsername,
+  currentDisplayUsername,
+  isAnonymous,
+  onClose,
+  onSignOut,
+}: SessionSectionProps) {
+  // Local busy state so we can disable + re-label the button while the
+  // sign-out round-trip is in flight. Dashboard already tracks the same
+  // `signingOut` flag; we mirror it here for the button's own UI
+  // affordance without coupling the two components.
+  const [busy, setBusy] = useState(false);
+
+  // For real accounts, show the email (the unique identifier). For
+  // anonymous users show "Guest" — there's no other identity to surface
+  // and the upgrade CTA below explains how to convert this session.
+  const identity = isAnonymous
+    ? 'Guest'
+    : userEmail ?? currentDisplayUsername ?? currentUsername ?? '';
+
+  async function handleSignOut() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      // Close the modal first so the user doesn't see the modal fade
+      // against a now-signed-out dashboard during the in-flight round
+      // trip. Dashboard's onSignOut handles editing/settings state
+      // cleanup; App.tsx flips the local user back to LoginPage once
+      // SIGNED_OUT fires.
+      onClose();
+      await onSignOut();
+    } finally {
+      // Defensive: if the parent unmounts cleanly there's nothing left
+      // to reset, but if a parent swallows the error and we stay
+      // mounted, leave the button re-enabled so the user can retry.
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="settings-section">
+      <h3>Session</h3>
+      <p className="settings-help">
+        {isAnonymous
+          ? 'You’re signed in as a guest. Sign out to end this browser session — your data is kept and you can sign back in as a guest from this device, or upgrade below to use this account on any device.'
+          : `Signed in as ${identity}.`}
+      </p>
+      <div className="settings-section-actions">
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={handleSignOut}
+          disabled={busy}
+          aria-busy={busy || undefined}
+        >
+          {busy ? 'Signing out…' : 'Sign out'}
+        </button>
+      </div>
+    </section>
   );
 }
 
