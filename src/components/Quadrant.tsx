@@ -65,6 +65,16 @@ export function Quadrant({
   //     drop affordance — the user has to aim above the last
   //     card to land the drop at the bottom.
   const droppableId = `quadrant:${id}`;
+  // The empty <ul> gets its OWN unique id (`empty:<id>`) so dnd-kit
+  // registers it as a distinct droppable from the append zone. With
+  // the same id on both, dnd-kit's rect map would only carry the
+  // rect of whichever it measured last (the append zone), leaving
+  // `args.droppableRects.get('quadrant:do_first')` returning the
+  // 36px strip while the empty <ul> was effectively invisible to
+  // the collision chain. The dashboard's empty-quadrant boost
+  // detects `kind: 'empty-quadrant'` and translates the id back to
+  // `quadrant:<id>` for `applyMove` (see `getEffectiveOverId`).
+  const emptyDroppableId = `empty:${id}`;
   // Marker so the dashboard's collision strategy can boost the empty
   // <ul>'s effective hit area. Without this, the dragged card (still
   // at its source rect, only translating past the 8px activation
@@ -72,12 +82,12 @@ export function Quadrant({
   // misses the drop zone entirely — leaving the user unable to drop
   // into an empty quadrant. The 24px padding mirrors the visual
   // dashed border so the hit area matches what the user sees.
-  const emptyListData = { kind: 'empty-quadrant' as const };
+  const emptyListData = { kind: 'empty-quadrant' as const, quadrant: id };
   const {
     setNodeRef: setEmptyListRef,
     isOver: isOverEmpty,
   } = useDroppable({
-    id: droppableId,
+    id: emptyDroppableId,
     disabled: reorderDisabled,
     // Empty-quadrant marker — read by the dashboard's collision
     // strategy to widen the effective hit area by 24px so the drop

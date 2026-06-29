@@ -26,6 +26,13 @@ import {
   type CollisionDetection,
 } from '@dnd-kit/core';
 import type { DragStartEvent, DragEndEvent, DragOverEvent, DragCancelEvent } from '@dnd-kit/core';
+// `snapCenterToCursor` re-anchors the DragOverlay so its center
+// follows the cursor instead of staying glued to the source rect's
+// top-left. Without it the dragged card sits ~250px to the left of
+// the cursor for any non-trivial card width, which made
+// cross-quadrant drops feel like the overlay was "lagging" the
+// pointer. Has no effect with the KeyboardSensor (no coordinates).
+import { snapCenterToCursor } from '@dnd-kit/modifiers';
 
 /**
  * Pixels of effective hit-area padding around an empty quadrant's
@@ -73,11 +80,25 @@ interface Props {
 // `quadrant:<id>`. Helper for the collision-detection strategy
 // below — see `handleDragOver` for the matching logic.
 const QUADRANT_PREFIX = 'quadrant:';
+const EMPTY_PREFIX = 'empty:';
 function isQuadrantId(id: string): id is `${typeof QUADRANT_PREFIX}${QuadrantId}` {
   return id.startsWith(QUADRANT_PREFIX);
 }
+function isEmptyQuadrantId(id: string): id is `${typeof EMPTY_PREFIX}${QuadrantId}` {
+  return id.startsWith(EMPTY_PREFIX);
+}
 function quadrantIdFromDroppable(id: string): QuadrantId {
   return id.slice(QUADRANT_PREFIX.length) as QuadrantId;
+}
+function quadrantIdFromEmpty(id: string): QuadrantId {
+  return id.slice(EMPTY_PREFIX.length) as QuadrantId;
+}
+// Translate any "drop on this quadrant" id (both `quadrant:<id>`
+// and `empty:<id>`) into the canonical `quadrant:<id>` form so
+// downstream logic doesn't need to know about the empty variant.
+function getEffectiveOverId(id: string): string {
+  if (isEmptyQuadrantId(id)) return `${QUADRANT_PREFIX}${quadrantIdFromEmpty(id)}`;
+  return id;
 }
 
 export function Dashboard({
@@ -222,6 +243,16 @@ export function Dashboard({
   //
   //   4. Closest center: in-list reorder when the pointer is
   //      between two cards and nothing else is under it.
+  //
+  // Collision-rect note: dnd-kit's `collisionRect` is the *source
+  // rect translated by the drag delta*, NOT where the visual
+  // DragOverlay renders. With `snapCenterToCursor` the overlay is
+  // re-centered on the cursor but the framework's `collisionRect`
+  // still tracks the source — which means `rectIntersection` and
+  // `closestCenter` would run as if the overlay were still at the
+  // source position, making intra-quadrant reorders feel sluggish.
+  // We rebuild `args` with `collisionRect` re-centered on the
+  // pointer so the framework's geometry matches what the user sees.
   const collisionDetection: CollisionDetection = useCallback(
     (args) => {
       // If the pointer just moved a card across containers, dnd-kit
@@ -237,6 +268,13 @@ export function Dashboard({
       //    inside the inflated rect, return that droppable
       //    immediately. Cheaper than re-running rectIntersection
       //    with a synthesized rect map.
+      //
+      //    The empty droppable has a unique id (`empty:<id>`) so
+      //    dnd-kit tracks it independently from the append zone
+      //    (which uses `quadrant:<id>`). We translate back to
+      //    `quadrant:<id>` here so `findLiveContainer` /
+      //    `decodeDropTarget` see a single canonical id for the
+      //    "drop on this quadrant" semantic.
       const pointer = args.pointerCoordinates;
       if (pointer) {
         for (const container of args.droppableContainers) {
@@ -258,41 +296,77 @@ export function Dashboard({
             pointer.y >= inflated.top &&
             pointer.y <= inflated.bottom
           ) {
-            lastOverIdRef.current = String(container.id);
-            return [{ id: container.id }];
+            // Return the actual registered id (e.g. `empty:eliminate`).
+            // dnd-kit's droppableContainers map is keyed by the id
+            // passed to useDroppable — for an empty quadrant that's
+            // `empty:<id>`, NOT `quadrant:<id>` (the canonical
+            // append-zone id is only registered when the quadrant has
+            // at least one task). Returning `quadrant:eliminate`
+            // here would make dnd-kit's getOverContainer return
+            // undefined and dispatch `over: null`, dropping the
+            // collision. The canonical form is recovered downstream
+            // by handleDragOver's `getEffectiveOverId` normalization.
+            const id = String(container.id);
+            lastOverIdRef.current = getEffectiveOverId(id);
+            return [{ id }];
           }
         }
       }
 
+      // Rebuild `args` with `collisionRect` re-centered on the
+      // pointer. dnd-kit's chain uses collisionRect for
+      // `rectIntersection` and `closestCenter`; without this fix
+      // they'd run as if the overlay were still glued to the
+      // source's top-left, not where `snapCenterToCursor` actually
+      // placed it.
+      const baseArgs = pointer && args.collisionRect
+        ? {
+            ...args,
+            collisionRect: {
+              top: pointer.y - args.collisionRect.height / 2,
+              left: pointer.x - args.collisionRect.width / 2,
+              right: pointer.x + args.collisionRect.width / 2,
+              bottom: pointer.y + args.collisionRect.height / 2,
+              width: args.collisionRect.width,
+              height: args.collisionRect.height,
+            },
+          }
+        : args;
+
       // 2) Pointer-direct: highest fidelity, picks the card under
       //    the cursor including across quadrant boundaries.
+      //    `pointerWithin` uses pointerCoordinates directly, so it
+      //    doesn't need the rebuilt args.
       const pointerHits = pointerWithin(args);
       if (pointerHits.length > 0) {
         const first = pointerHits[0];
-        lastOverIdRef.current = String(first.id);
-        return [first];
+        const id = String(first.id);
+        lastOverIdRef.current = getEffectiveOverId(id);
+        return [{ id }];
       }
 
       // 3) Rect intersection: catches the empty-quadrant <ul>
       //    (when the cursor is right on top of it, not in the
       //    padding) and the append strip when the pointer sits
       //    over the dashed border rather than a card body.
-      const rectHits = rectIntersection(args);
+      const rectHits = rectIntersection(baseArgs);
       if (rectHits.length > 0) {
         const first = getFirstCollision(rectHits, 'id');
         if (first) {
-          lastOverIdRef.current = String(first);
-          return [{ id: first }];
+          const id = String(first);
+          lastOverIdRef.current = getEffectiveOverId(id);
+          return [{ id }];
         }
       }
 
       // 4) Closest center: in-list reorder when the pointer is
       //    between two cards and nothing else is under it.
-      const centerHits = closestCenter(args);
+      const centerHits = closestCenter(baseArgs);
       if (centerHits.length > 0) {
         const first = centerHits[0];
-        lastOverIdRef.current = String(first.id);
-        return [first];
+        const id = String(first.id);
+        lastOverIdRef.current = getEffectiveOverId(id);
+        return [{ id }];
       }
 
       // No hit — but if we have a cached id and we're mid-move,
@@ -306,8 +380,15 @@ export function Dashboard({
   );
 
   function findLiveContainer(id: string): QuadrantId | null {
-    // Droppable ids for whole-quadrant surfaces are `quadrant:<id>`.
-    if (isQuadrantId(id)) return quadrantIdFromDroppable(id);
+    // Droppable ids for whole-quadrant surfaces are `quadrant:<id>`
+    // (append zone, or the canonical id returned by the
+    // empty-quadrant boost in collisionDetection) OR `empty:<id>`
+    // (the empty <ul> directly, when dnd-kit's own pointerWithin /
+    // closestCenter chain wins over our boost). Normalize via
+    // `getEffectiveOverId` so this function only deals with the
+    // canonical form.
+    const effective = getEffectiveOverId(id);
+    if (isQuadrantId(effective)) return quadrantIdFromDroppable(effective);
     // Otherwise the id is a task id; look up its current bucket in
     // the live mirror. During a drag this respects the in-flight
     // reordering.
@@ -348,7 +429,8 @@ export function Dashboard({
     if (!over) return;
 
     const activeId = String(active.id);
-    const overId = String(over.id);
+    const overId = getEffectiveOverId(String(over.id));
+    if (overId === activeId) return;
 
     // Calendar drags don't need the matrix's re-bucket logic — the
     // dot is already opaque-on-grab and we only care about the final
@@ -454,7 +536,12 @@ export function Dashboard({
     lastOverIdRef.current = null;
     recentlyMovedToNewContainerRef.current = false;
     const activeId = String(e.active.id);
-    const overId = e.over ? String(e.over.id) : null;
+    // Normalize the over id — dnd-kit may report either
+    // `quadrant:<id>` (canonical form from the empty-quadrant
+    // boost) or `empty:<id>` (when its own pointerWithin /
+    // closestCenter chain wins). `reorder` → `applyMove` expects
+    // the canonical `quadrant:<id>` shape.
+    const overId = e.over ? getEffectiveOverId(String(e.over.id)) : null;
 
     // Calendar reschedule path. The dragged dot's id is prefixed
     // `task:` and the day's droppable id is prefixed `day:` (both
@@ -789,6 +876,19 @@ export function Dashboard({
               />
             )}
             <DragOverlay
+              // Re-anchors the overlay so its CENTER follows the
+              // cursor instead of staying glued to the source rect's
+              // top-left. Without this modifier dnd-kit positions the
+              // overlay at the source's top-left and only translates
+              // by the drag delta — for a wide card that puts the
+              // visible card ~half its width to the LEFT of the
+              // cursor, which made cross-quadrant drops feel
+              // imprecise. The framework's `collisionRect` is still
+              // source-anchored; the matching fix is in
+              // `collisionDetection` above (rebuild `args` so
+              // rectIntersection / closestCenter see a
+              // cursor-centered rect).
+              modifiers={[snapCenterToCursor]}
               // Bump z-index above sibling cards so the overlay
               // can't be covered by a card that's between the cursor
               // and the source. dnd-kit sets zIndex: 999 by default;
