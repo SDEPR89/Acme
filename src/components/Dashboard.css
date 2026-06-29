@@ -467,13 +467,17 @@
 
 /* ---------- Narrow phones (≤480px) ---------- */
 @media (max-width: 480px) {
-  /* Header — single line. Brand mark + 'Acme' on the left, theme
-     square on the right. The username text sits inline with the
-     brand (its `::before` adds the '· ' separator) so the header
-     stays one row on narrow phones. */
+  /* Header — single line, vertically compact. Brand mark + 'Acme'
+     on the left, theme square on the right. The username text
+     sits inline with the brand (its `::before` adds the '· '
+     separator) so the header stays one row on narrow phones.
+     Reduce padding/margin around the header so it doesn't
+     dominate the viewport. */
   .dashboard-header {
     flex-wrap: nowrap;
     gap: 8px;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
   }
   .brand {
     flex: 1;
@@ -500,15 +504,13 @@
   .dashboard-user {
     gap: 8px;
   }
-  /* Theme toggle — explicit square with aspect-ratio so it stays
-     a square even if the inner icon size changes. Slightly larger
-     than the icon-only buttons to read as a "square" rather than a
-     dot, matching the mockup. */
+  /* Theme toggle — explicit square with aspect-ratio. Matches
+     the brand mark size so the row stays a single line height. */
   .theme-toggle {
-    width: 38px;
-    height: 38px;
+    width: 32px;
+    height: 32px;
     aspect-ratio: 1;
-    border-radius: 10px;
+    border-radius: 8px;
   }
   /* Toolbar: smaller title so the view-toggle fits comfortably. */
   .dashboard-toolbar h1 {
