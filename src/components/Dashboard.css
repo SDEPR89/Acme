@@ -425,6 +425,17 @@
     flex: 0 0 auto;
   }
 
+  /* On mobile, hide the Active/Done toolbar toggle when the calendar
+     tab is active. The toggle is meaningless for the calendar view
+     (calendar shows incomplete tasks only, no Done view), and showing
+     a stale "Active 0 / Done 0" above the month grid feels like a
+     navigation bug. The Matrix tab still uses the toggle normally.
+     The class is applied via the dashboard root element in Dashboard.tsx
+     based on the active mobileTab. */
+  .dashboard.is-mobile-calendar .dashboard-toolbar .view-toggle {
+    display: none;
+  }
+
   /* The settings tab doesn't have an "active" state (it opens a
      modal), but it still needs the same hit-target + hover affordance
      as the other two. */

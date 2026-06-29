@@ -565,7 +565,16 @@ export function Dashboard({
   }
 
   return (
-    <div className="dashboard">
+    <div
+      className={
+        // `is-mobile-calendar` lets CSS hide the Active/Done toolbar
+        // toggle when the calendar tab is open on mobile — the toggle
+        // is meaningless there (calendar shows incomplete tasks only).
+        isMobile === true && mobileTab === 'calendar'
+          ? 'dashboard is-mobile-calendar'
+          : 'dashboard'
+      }
+    >
       <header className="dashboard-header">
         <div className="brand">
           <div className="brand-mark">A</div>

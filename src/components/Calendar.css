@@ -13,6 +13,18 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
+/* When the calendar is mounted as the entire mobile pane, drop the
+   desktop-style frame so it fills the viewport without competing with
+   the page's outer chrome. */
+.dashboard-pane--calendar > .calendar {
+  margin-top: 0;
+  border: 0;
+  padding: 12px 8px;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 .calendar-header {
   display: flex;
   align-items: center;
@@ -258,10 +270,27 @@
   margin-left: 2px;
 }
 
-/* Mobile/tablet: hide entirely. The matrix keeps the viewport — the
-   calendar's 6-row grid makes the page too long on a phone. */
+/* Mobile/tablet: the calendar used to be hidden here because it sat
+   below the matrix and made the page too long on a phone. With the
+   mobile bottom-nav refactor (Dashboard.tsx), the calendar now has
+   its own dedicated tab on mobile and needs to be visible inside
+   `.dashboard-pane--calendar`. The `display: block` override below
+   makes it visible inside that pane; outside that pane on mobile
+   the calendar is no longer rendered (see the `isMobile !== true`
+   guard in Dashboard.tsx), so there's nothing to hide.
+
+   We also shrink the per-cell min-height inside the mobile pane so
+   the full 6-row grid fits on a typical phone screen without
+   forcing the user to scroll past the bottom nav. */
 @media (max-width: 720px) {
-  .calendar {
-    display: none;
+  .dashboard-pane--calendar .calendar {
+    display: block;
+  }
+  .dashboard-pane--calendar .calendar-cell {
+    min-height: 64px;
+    padding: 0.3rem 0.35rem 0.35rem;
+  }
+  .dashboard-pane--calendar .calendar-cell-number {
+    font-size: 0.75rem;
   }
 }
