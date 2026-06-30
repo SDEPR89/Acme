@@ -71,20 +71,9 @@
   color: var(--confirming-fg);
 }
 
-.confirming-page-header .brand-mark {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: var(--confirming-chip-bg);
-  color: var(--confirming-chip-fg);
-  display: grid;
-  place-items: center;
-  font-size: 12px;
-  font-weight: 700;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--confirming-chip-border);
-}
+/* Brand mark on the confirming page reuses the base .brand-mark
+   (App.css). The image fills the 24×24 square, so the previous chip
+   background, border, and font props were removed. */
 
 @keyframes confirming-fade-down {
   from { opacity: 0; transform: translateY(-8px); }

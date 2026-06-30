@@ -126,21 +126,9 @@
   transition: color .35s ease;
 }
 
-.login-brand-top .brand-mark {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: var(--login-chip-bg);
-  color: var(--login-chip-fg);
-  display: grid;
-  place-items: center;
-  font-size: 12px;
-  font-weight: 700;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--login-chip-border);
-  transition: background .35s, color .35s, border-color .35s;
-}
+/* Brand mark on the login page reuses the base .brand-mark (App.css).
+   The image fills the 24×24 square, so the previous chip background,
+   border, and font props were removed — the logo IS the mark now. */
 
 @keyframes brand-fade-in {
   from { opacity: 0; transform: translateY(-6px); }

@@ -290,7 +290,7 @@ export function LoginPage() {
       {/* Brand pinned top-right */}
       <div className="login-brand-top">
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
-        <div className="brand-mark">A</div>
+        <img className="brand-mark" src="/logo.png" alt="Kurhona" />
         <span>Kurhona</span>
       </div>
 

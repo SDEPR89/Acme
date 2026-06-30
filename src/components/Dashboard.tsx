@@ -408,7 +408,7 @@ function DashboardHeader({
   return (
     <header className="dashboard-header">
       <div className="brand">
-        <div className="brand-mark">A</div>
+        <img className="brand-mark" src="/logo.png" alt="Kurhona" />
         <span className="brand-name">Kurhona</span>
         <span className="dashboard-display-name">
           {isAnonymous

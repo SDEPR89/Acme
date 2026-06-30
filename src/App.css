@@ -16,12 +16,8 @@
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  background: var(--accent);
-  color: var(--accent-fg);
-  display: grid;
-  place-items: center;
-  font-size: 12px;
-  font-weight: 700;
+  display: block;
+  object-fit: contain;
 }
 
 h1 {

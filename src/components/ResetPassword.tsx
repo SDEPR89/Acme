@@ -81,7 +81,7 @@ export function ResetPassword({ onComplete, onCancel }: Props) {
     <main className="reset-page">
       <div className="card">
         <div className="brand">
-          <div className="brand-mark">A</div>
+          <img className="brand-mark" src="/logo.png" alt="Kurhona" />
           <span>Kurhona</span>
         </div>
 
