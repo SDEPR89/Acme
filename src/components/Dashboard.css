@@ -535,9 +535,14 @@
   .task-body {
     min-width: 0;
   }
-  .task-title-row {
+  .task-row-main {
     flex-wrap: wrap;
     min-width: 0;
+  }
+  .task-row-right {
+    /* On narrow screens the right cluster wraps under the title so
+       the title isn't squeezed into a few characters. */
+    flex-shrink: 0;
   }
   .task-title {
     overflow-wrap: anywhere;
@@ -791,42 +796,50 @@
   opacity: 0.55;
 }
 
-/* ---------- Status dot (bottom-left corner of each card) ---------- */
+/* ---------- Status dot (top-right of each card, inline with title) ----------
+   The dot used to live absolutely-positioned in the bottom-left corner of
+   the card. With the new card layout (top row: title | chip | dot) it
+   sits inline in `.task-row-right`, beside the due-date chip. This makes
+   status scannable at a glance — the eye reads the title first, then
+   follows right to deadline + status without scanning a second row.
+
+   On desktop the dot is a small 14px span (a display indicator). On
+   mobile the dot becomes a 28px tap target (a <button>) — its visible
+   circle is the same 14px dot centered inside a transparent hit area. */
 .task-status-dot {
-  position: absolute;
-  left: 8px;
-  bottom: 8px;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   flex-shrink: 0;
+  display: inline-block;
   pointer-events: auto;
   transition: transform .15s ease, box-shadow .15s ease;
 }
-/* On hover, give the dot a faint ring so it doesn't look like a stray
-   pixel. Mirrors the hover-revealed × button on the right edge. */
+/* On hover (desktop), give the dot a faint ring so it doesn't look like
+   a stray pixel. Mirrors the hover-revealed × button on the right edge. */
 .task-card:hover .task-status-dot {
   box-shadow: 0 0 0 3px var(--glass-bg-strong);
   transform: scale(1.1);
 }
 /* Button variant (mobile): the dot becomes a tap target. We bump the
    hit area to 28px so it's comfortable on touch while keeping the
-   visible dot at 12px via a ::before. */
+   visible dot at 14px via a ::before. The hit area replaces the
+   pointer-events on the parent <span> for the same reason — without it
+   the underlying <span> style would clip taps. */
 button.task-status-dot {
-  left: 0;
-  bottom: 0;
   width: 28px;
   height: 28px;
   background: transparent;
   border: 0;
   padding: 0;
   cursor: pointer;
-  display: block;
+  display: inline-block;
+  position: relative;
 }
 button.task-status-dot:focus-visible {
-  /* Visible focus ring for keyboard users tabbing through the
-     matrix on mobile / touch devices. The 28px hit area is the
-     focus target; the 12px visible dot is centered inside it. */
+  /* Visible focus ring for keyboard users tabbing through the matrix
+     on mobile / touch devices. The 28px hit area is the focus target;
+     the 14px visible dot is centered inside it. */
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-radius: 6px;
@@ -834,10 +847,10 @@ button.task-status-dot:focus-visible {
 button.task-status-dot::before {
   content: '';
   position: absolute;
-  left: 8px;
-  bottom: 8px;
-  width: 12px;
-  height: 12px;
+  left: 7px;
+  top: 7px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   display: block;
   background: transparent;
@@ -863,35 +876,17 @@ button.task-status-dot.status-dot--submitted::before {
   background: var(--status-submitted-bg);
 }
 
-/* Mobile cards get a 28px tap target for the status dot, which means
-   the title row and meta row need a left pad so content doesn't sit
-   underneath the dot's hit area. On desktop the dot is a 12px span;
-   the same padding is added so a wrapped title line doesn't get
-   clipped by the absolutely-positioned dot. */
-.task-card:has(.task-status-dot) .task-title-row,
-.task-card:has(.task-status-dot) .task-meta {
-  padding-left: 24px;
-}
-
 /* Done cards dim the dot too, matching the title. */
 .task-card.is-done .task-status-dot,
 .task-card.is-done button.task-status-dot::before {
   opacity: 0.5;
 }
 
-/* ---------- Subject name (inline with the colored dot) ---------- */
-.task-subject-name {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--fg-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90px;
-  flex-shrink: 1;
-}
+/* (Subject name styles moved into the .task-body block above — the
+   new card layout puts subject + description in a small subtitle
+   row, not as inline all-caps text. The earlier rules below are
+   removed; see .task-row-meta / .task-subject / .task-subject-name
+   in the new card-body section.) */
 
 @keyframes task-tick {
   0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(27, 163, 156, 0); }
@@ -913,6 +908,17 @@ button.task-status-dot.status-dot--submitted::before {
   cursor: pointer;
 }
 
+/* ---------- Task card body (two-row layout) ----------
+   The card body is a vertical stack of two rows inside `.task-card`:
+     1. .task-row-main   — title on the left, due chip + status dot on
+                            the right. This is the eye-catching row.
+     2. .task-row-meta   — subject (with its color dot) + description,
+                            small and muted, only renders when at least
+                            one is set. The two rows are independent
+                            in width: the main row gets a flex column
+                            that lets the title shrink to make room
+                            for the right cluster; the meta row
+                            overflows with ellipsis on long subjects. */
 .task-body {
   flex: 1;
   background: transparent;
@@ -924,15 +930,27 @@ button.task-status-dot.status-dot--submitted::before {
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 
-.task-title-row {
+.task-row-main {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
+}
+
+/* Right cluster of the main row: due chip + status dot. `flex-shrink: 0`
+   keeps both visible even if the title is long — the title wraps/ellipses
+   instead. A small horizontal gap separates the chip from the dot so
+   they read as distinct pieces of information. */
+.task-row-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .subject-dot {
@@ -949,23 +967,37 @@ button.task-status-dot.status-dot--submitted::before {
   color: var(--fg);
   word-break: break-word;
   /* min-width: 0 lets the title shrink below its intrinsic width so
-     a long title doesn't push a sibling like the subject name out
-     of the card on desktop. The .task-title-row flex container
-     already has min-width: 0 on mobile (lines 538-543); the same
-     principle applies on desktop. */
+     a long title doesn't push a sibling like the due chip or status
+     dot out of the card. */
   min-width: 0;
   flex: 1 1 auto;
   transition: color .35s ease;
 }
 
-.task-meta {
+/* Meta row: subject (color dot + name) and description, separated by
+   a small "·" so the eye reads them as discrete pieces. Hidden when
+   both are missing (the JSX guards the render). */
+.task-row-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
   font-size: 12px;
   color: var(--fg-muted);
   transition: color .35s ease;
+}
+
+.task-subject {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.task-row-meta-sep {
+  color: var(--fg-faint);
+  flex-shrink: 0;
 }
 
 .due-chip {
@@ -977,6 +1009,7 @@ button.task-status-dot.status-dot--submitted::before {
   color: var(--fg-soft);
   background: var(--chip-bg);
   transition: background .35s, color .35s, border-color .35s;
+  white-space: nowrap;
 }
 
 .due-chip.is-overdue {
@@ -985,13 +1018,24 @@ button.task-status-dot.status-dot--submitted::before {
   background: var(--danger-bg);
 }
 
+.task-subject-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
 .task-description {
   font-size: 12px;
   color: var(--fg-fainter);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 /* ---------- Task delete button (hover-revealed × on each card) ---------- */

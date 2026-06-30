@@ -161,6 +161,15 @@ export function TaskCard({
         falling through to this onClick. `attributes` already supplies
         role="button" / tabIndex / aria-roledescription — we don't
         re-set them here or TypeScript flags the duplicate.
+
+        Layout: two stacked rows.
+          - .task-row-main: title on the left, due-chip + status-dot
+            on the right. Pulls the deadline up beside the title so
+            it's scannable at a glance, and stops the status dot from
+            living in the absolute bottom-left corner.
+          - .task-row-meta: subject (with its color dot) and
+            description, smaller and muted, only renders when at least
+            one is set so cards without either stay compact.
        */}
       <div
         className="task-body"
@@ -169,62 +178,67 @@ export function TaskCard({
         {...listeners}
         {...attributes}
       >
-        <span className="task-title-row">
-          {subject && (
-            <span
-              className="subject-dot"
-              style={{ backgroundColor: subject.color ?? 'var(--muted)' }}
-              aria-hidden="true"
-            />
-          )}
+        <div className="task-row-main">
           <span className="task-title">{task.title}</span>
-          {subject && (
-            <span className="task-subject-name" title={subject.name}>
-              {subject.name}
-            </span>
-          )}
-        </span>
-
-        {(task.description || task.due_date) && (
-          <span className="task-meta">
+          <span className="task-row-right">
             {task.due_date && (
               <span className={`due-chip${overdue ? ' is-overdue' : ''}`}>
                 {dueLabel}
               </span>
             )}
+            {/*
+              Status dot — inline in the top-right row, not absolutely
+              positioned in the bottom-left corner. The wrapper is a
+              <button> when `onOpenStatusDetail` is provided (mobile,
+              where the dot is a 28px tap target) and a plain <span>
+              otherwise (desktop, where the dot is a display-only
+              indicator). Status colors come from a CSS modifier class
+              so the light/dark themes can remap them via tokens.
+             */}
+            {onOpenStatusDetail ? (
+              <button
+                type="button"
+                className={`task-status-dot status-dot--${task.status}`}
+                onClick={handleStatusDotClick}
+                disabled={isBusy}
+                aria-label={`Status: ${statusMeta.label}. Tap to change.`}
+                title={statusMeta.label}
+              />
+            ) : (
+              <span
+                className={`task-status-dot status-dot--${task.status}`}
+                aria-label={`Status: ${statusMeta.label}`}
+                title={statusMeta.label}
+              />
+            )}
+          </span>
+        </div>
+
+        {(subject || task.description) && (
+          <div className="task-row-meta">
+            {subject && (
+              <span className="task-subject">
+                <span
+                  className="subject-dot"
+                  style={{ backgroundColor: subject.color ?? 'var(--muted)' }}
+                  aria-hidden="true"
+                />
+                <span className="task-subject-name" title={subject.name}>
+                  {subject.name}
+                </span>
+              </span>
+            )}
+            {subject && task.description && (
+              <span className="task-row-meta-sep" aria-hidden="true">
+                ·
+              </span>
+            )}
             {task.description && (
               <span className="task-description">{task.description}</span>
             )}
-          </span>
+          </div>
         )}
       </div>
-
-      {/*
-        Status dot — absolutely positioned at the bottom-left of the
-        card so it doesn't fight the title row for space and so the
-        eye reads it as a corner indicator. The wrapper is a <button>
-        when `onOpenStatusDetail` is provided (mobile, where the dot
-        is a 28px tap target) and a plain <span> otherwise (desktop,
-        where the dot is a display-only indicator). The status colors
-        come from a CSS modifier class so the light/dark themes can
-        remap them via tokens without touching this file.
-       */}
-      {onOpenStatusDetail ? (
-        <button
-          type="button"
-          className={`task-status-dot status-dot--${task.status}`}
-          onClick={handleStatusDotClick}
-          disabled={isBusy}
-          aria-label={`Status: ${statusMeta.label}. Tap to change.`}
-          title={statusMeta.label}
-        />
-      ) : (
-        <span
-          className={`task-status-dot status-dot--${task.status}`}
-          aria-label={`Status: ${statusMeta.label}`}
-          title={statusMeta.label}
-        />
-      )}
 
       <button
         type="button"
