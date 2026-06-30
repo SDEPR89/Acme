@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -12,7 +12,7 @@ import { useToast } from '../hooks/useToast';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
 import { QUADRANTS } from '../types';
-import type { Quadrant as QuadrantId, Task, Subject } from '../types';
+import type { Quadrant as QuadrantId, Task, Subject, Status } from '../types';
 import { ThemeToggle } from './ThemeToggle';
 import { Quadrant } from './Quadrant';
 import { TaskCard } from './TaskCard';
@@ -20,6 +20,7 @@ import { TaskModal } from './TaskModal';
 import { SettingsModal } from './SettingsModal';
 import { Calendar } from './Calendar';
 import { DoneList } from './DoneList';
+import { StatusDetail } from './StatusDetail';
 import './Dashboard.css';
 
 type View = 'active' | 'done';
@@ -85,6 +86,10 @@ export function Dashboard({
     | { kind: 'edit'; task: Task }
     | null
   >(null);
+  // Mobile-only: tapping a task's status dot sets this so the
+  // full-page StatusDetail picker can render. Desktop users edit
+  // status via the TaskModal, so this stays null on desktop.
+  const [statusDetailTask, setStatusDetailTask] = useState<Task | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>('matrix');
@@ -168,6 +173,20 @@ export function Dashboard({
     else completeTask(task.id);
   }
 
+  // Status change from the mobile StatusDetail picker. The picker
+  // closes itself; this just persists the new value. The hook's
+  // surface() call (via showError) handles the failure case via
+  // toast — the user has already moved on by the time the request
+  // round-trips.
+  async function handleStatusChange(task: Task, status: Status) {
+    await updateTask(task.id, { status });
+  }
+
+  // Stable callback for the StatusDetail's onClose. Without this the
+  // picker re-attaches its keydown listener on every parent render
+  // because the inline arrow would have a new identity each time.
+  const closeStatusDetail = useCallback(() => setStatusDetailTask(null), []);
+
   async function handleCreateSubject(name: string, color: string) {
     return await addSubject({ name, color });
   }
@@ -177,7 +196,9 @@ export function Dashboard({
     description: string | null;
     subject_id: string | null;
     due_date: string | null;
+    due_time: string | null;
     quadrant: QuadrantId;
+    status: Status;
   }): Promise<boolean> {
     if (!editing) return false;
     const row =
@@ -310,6 +331,10 @@ export function Dashboard({
         isTaskBusy={isTaskBusy}
         reorderBusy={reorderBusy}
         renderOverlay={renderOverlay}
+        // Mobile only: tap a task's status dot to open the full-page
+        // picker. On desktop we pass undefined so the card renders a
+        // non-interactive <span> for the dot.
+        onOpenStatusDetail={isMobile === true ? setStatusDetailTask : undefined}
       />
 
       <DashboardMobileTabbar
@@ -343,7 +368,9 @@ export function Dashboard({
             description: editing.task.description,
             subject_id: editing.task.subject_id,
             due_date: editing.task.due_date,
+            due_time: editing.task.due_time,
             quadrant: editing.task.quadrant,
+            status: editing.task.status,
           }}
           subjects={subjects}
           onCreateSubject={handleCreateSubject}
@@ -367,6 +394,23 @@ export function Dashboard({
           onSignOut={handleSignOut}
           onAccountDeleted={onAccountDeleted}
           onAccountUpgraded={onAccountUpgraded}
+        />
+      )}
+
+      {/*
+        StatusDetail — mobile-only full-page picker. Mounted on
+        mobile because the card's status dot is only tappable there
+        (on desktop, `onOpenStatusDetail` is undefined). Look up the
+        latest task from the canonical list so the picker sees a
+        fresh `status` value (the one captured in `statusDetailTask`
+        could be stale by the time the user opens it).
+       */}
+      {statusDetailTask && (
+        <StatusDetail
+          task={tasks.find((t) => t.id === statusDetailTask.id) ?? statusDetailTask}
+          subject={subjects.find((s) => s.id === statusDetailTask.subject_id)}
+          onChange={(next) => handleStatusChange(statusDetailTask, next)}
+          onClose={closeStatusDetail}
         />
       )}
     </div>
@@ -543,6 +587,10 @@ interface DashboardViewProps {
   isTaskBusy?: (id: string) => boolean;
   reorderBusy: boolean;
   renderOverlay: () => React.ReactNode;
+  // Mobile-only: when present, tapping a task's status dot opens the
+  // full-page StatusDetail picker. The dashboard passes a no-op on
+  // desktop so the dot is a display-only indicator there.
+  onOpenStatusDetail?: (t: Task) => void;
 }
 
 function DashboardView(props: DashboardViewProps) {
@@ -564,6 +612,7 @@ function DashboardView(props: DashboardViewProps) {
     isTaskBusy,
     reorderBusy,
     renderOverlay,
+    onOpenStatusDetail,
   } = props;
 
   // Three branches: mobile calendar, active (matrix + DnD), done.
@@ -603,6 +652,7 @@ function DashboardView(props: DashboardViewProps) {
                 onDelete={onDelete}
                 isTaskBusy={isTaskBusy}
                 reorderDisabled={reorderBusy}
+                onOpenStatusDetail={onOpenStatusDetail}
               />
             ))}
           </div>
@@ -631,6 +681,7 @@ function DashboardView(props: DashboardViewProps) {
         onDelete={onDelete}
         loading={loading}
         isTaskBusy={isTaskBusy}
+        onOpenStatusDetail={onOpenStatusDetail}
       />
     </div>
   );

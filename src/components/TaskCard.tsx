@@ -1,5 +1,6 @@
 import type { MouseEvent, KeyboardEvent, CSSProperties } from 'react';
 import type { Task, Subject } from '../types';
+import { STATUSES } from '../types';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -17,21 +18,62 @@ interface Props {
   // card so a second drop can't race the first. Wired by Dashboard
   // via the useTasks `reorderBusy` flag.
   dragDisabled?: boolean;
+  // Fires when the user taps/clicks the status circle (mobile only —
+  // desktop passes a no-op so the dot stays a display indicator until
+  // the user edits via the TaskModal). The StatusDetail full-page
+  // picker is mounted from the dashboard in response to this.
+  onOpenStatusDetail?: () => void;
 }
 
 function isOverdue(dueDate: string | null): boolean {
   if (!dueDate) return false;
-  // Compare on the date only, not the time of day.
+  // Compare on the date only, not the time of day. Comparing with the
+  // time would make a task due "today at 09:00" overdue at 09:01
+  // today, which is technically correct but feels aggressive on the
+  // morning of the due date. The chip lights up at 00:00 instead.
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const due = new Date(dueDate + 'T00:00:00');
   return due < today;
 }
 
-function formatDate(dueDate: string | null): string {
-  if (!dueDate) return '';
-  const d = new Date(dueDate + 'T00:00:00');
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+// Smart format for the due-date chip. `due_time` arrives as 'HH:MM:SS'
+// from Postgres (or null). We always build a Date in the user's local
+// timezone — Postgres' time-without-tz is implicitly local. The chip
+// shows "Today" / "Tomorrow" / "Jun 30" when no time is set, or the
+// same with the time appended when one is.
+function formatDue(task: Task): string {
+  if (!task.due_date) return '';
+  const d = new Date(task.due_date + 'T00:00:00');
+  // Use a fresh "today" so the day-boundary check uses the user's
+  // local midnight. We rebuild instead of caching so a card that's
+  // been on screen since yesterday correctly reports "Tomorrow" today.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const ms = d.getTime() - today.getTime();
+  const dayMs = 86_400_000;
+  const isToday = ms === 0;
+  const isTomorrow = ms === dayMs;
+
+  let label: string;
+  if (isToday) label = 'Today';
+  else if (isTomorrow) label = 'Tomorrow';
+  else label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+  if (!task.due_time) return label;
+  // Parse 'HH:MM:SS' and reformat to the user's locale. We split on
+  // ':' rather than constructing a Date because Date would apply the
+  // local timezone, but we already know the time is in local terms
+  // and want to render it verbatim. Slice to 'HH:MM' (drop seconds).
+  const [hh = '0', mm = '00'] = task.due_time.split(':');
+  const hour = Number(hh);
+  const minute = Number(mm);
+  // 12-hour with AM/PM. 'en-US' style for now — Date.toLocaleTimeString
+  // would also work but it returns seconds and we'd have to trim.
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  const time = `${hour12}:${String(minute).padStart(2, '0')} ${period}`;
+  return `${label} ${time}`;
 }
 
 export function TaskCard({
@@ -42,8 +84,13 @@ export function TaskCard({
   onDelete,
   isBusy = false,
   dragDisabled = false,
+  onOpenStatusDetail,
 }: Props) {
   const overdue = !task.completed_at && isOverdue(task.due_date);
+  const dueLabel = formatDue(task);
+  // Look up the current status's label once for the dot's aria-label.
+  // The dot's color comes from a CSS modifier class on the element.
+  const statusMeta = STATUSES.find((s) => s.id === task.status) ?? STATUSES[0];
 
   // dnd-kit sortable wiring. We spread `listeners` and `attributes`
   // on the card body (the inner <div role="button">) rather than the
@@ -76,6 +123,16 @@ export function TaskCard({
     e.stopPropagation();
     if (isBusy) return;
     onDelete();
+  }
+
+  function handleStatusDotClick(e: MouseEvent) {
+    // Stop propagation so the card body doesn't also receive the
+    // click and open the edit modal. Only relevant on mobile, where
+    // the dot is tappable; on desktop `onOpenStatusDetail` is a no-op
+    // and this handler still runs but does nothing.
+    e.stopPropagation();
+    if (isBusy) return;
+    onOpenStatusDetail?.();
   }
 
   function handleBodyKeyDown(e: KeyboardEvent<HTMLDivElement>) {
@@ -121,13 +178,18 @@ export function TaskCard({
             />
           )}
           <span className="task-title">{task.title}</span>
+          {subject && (
+            <span className="task-subject-name" title={subject.name}>
+              {subject.name}
+            </span>
+          )}
         </span>
 
         {(task.description || task.due_date) && (
           <span className="task-meta">
             {task.due_date && (
               <span className={`due-chip${overdue ? ' is-overdue' : ''}`}>
-                {formatDate(task.due_date)}
+                {dueLabel}
               </span>
             )}
             {task.description && (
@@ -136,6 +198,33 @@ export function TaskCard({
           </span>
         )}
       </div>
+
+      {/*
+        Status dot — absolutely positioned at the bottom-left of the
+        card so it doesn't fight the title row for space and so the
+        eye reads it as a corner indicator. The wrapper is a <button>
+        when `onOpenStatusDetail` is provided (mobile, where the dot
+        is a 28px tap target) and a plain <span> otherwise (desktop,
+        where the dot is a display-only indicator). The status colors
+        come from a CSS modifier class so the light/dark themes can
+        remap them via tokens without touching this file.
+       */}
+      {onOpenStatusDetail ? (
+        <button
+          type="button"
+          className={`task-status-dot status-dot--${task.status}`}
+          onClick={handleStatusDotClick}
+          disabled={isBusy}
+          aria-label={`Status: ${statusMeta.label}. Tap to change.`}
+          title={statusMeta.label}
+        />
+      ) : (
+        <span
+          className={`task-status-dot status-dot--${task.status}`}
+          aria-label={`Status: ${statusMeta.label}`}
+          title={statusMeta.label}
+        />
+      )}
 
       <button
         type="button"

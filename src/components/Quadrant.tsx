@@ -30,6 +30,11 @@ interface Props {
   // first one. Wired by Dashboard via the useTasks `reorderBusy`
   // flag.
   reorderDisabled?: boolean;
+  // Mobile-only: tapping a card's status dot opens the full-page
+  // StatusDetail picker. Quadrant forwards this to each TaskCard;
+  // when undefined (desktop), the card renders a non-interactive
+  // <span> for the dot.
+  onOpenStatusDetail?: (task: Task) => void;
 }
 
 export function Quadrant({
@@ -43,6 +48,7 @@ export function Quadrant({
   onDelete,
   isTaskBusy,
   reorderDisabled = false,
+  onOpenStatusDetail,
 }: Props) {
   const meta = QUADRANTS.find((q) => q.id === id)!;
   // `isEmpty` is driven by the live mirror so a cross-quadrant drop
@@ -126,6 +132,9 @@ export function Quadrant({
                 onDelete={() => onDelete(task)}
                 isBusy={isTaskBusy?.(task.id) ?? false}
                 dragDisabled={reorderDisabled}
+                onOpenStatusDetail={
+                  onOpenStatusDetail ? () => onOpenStatusDetail(task) : undefined
+                }
               />
             ))}
           </ul>

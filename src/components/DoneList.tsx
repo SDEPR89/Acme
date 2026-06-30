@@ -9,6 +9,13 @@ interface Props {
   onDelete: (task: Task) => void;
   loading: boolean;
   isTaskBusy?: (taskId: string) => boolean;
+  // Mobile-only: tapping a card's status dot opens the full-page
+  // StatusDetail picker. DoneList forwards this to each TaskCard so
+  // a done task can also have its status edited from the dot (e.g.
+  // marking a returned homework as "Submitted" without re-opening
+  // the edit modal). When undefined, the dot is a non-interactive
+  // <span> — same convention as Quadrant.
+  onOpenStatusDetail?: (task: Task) => void;
 }
 
 export function DoneList({
@@ -19,6 +26,7 @@ export function DoneList({
   onDelete,
   loading,
   isTaskBusy,
+  onOpenStatusDetail,
 }: Props) {
   if (loading) return <p className="dashboard-status">Loading…</p>;
   if (tasks.length === 0) {
@@ -44,6 +52,9 @@ export function DoneList({
               onClick={() => onTaskClick(task)}
               onDelete={() => onDelete(task)}
               isBusy={isTaskBusy?.(task.id) ?? false}
+              onOpenStatusDetail={
+                onOpenStatusDetail ? () => onOpenStatusDetail(task) : undefined
+              }
             />
           );
         })}

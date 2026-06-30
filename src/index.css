@@ -15,6 +15,15 @@
   --q-delegate:  #f59e0b;
   --q-eliminate: #6b7280;
 
+  --status-not-started-bg:    #9ca3af; /* gray */
+  --status-not-started-ring:  #6b7280;
+  --status-in-progress-bg:    #f59e0b; /* amber */
+  --status-in-progress-ring:  #b45309;
+  --status-ready-bg:          #3b82f6; /* blue */
+  --status-ready-ring:        #1d4ed8;
+  --status-submitted-bg:      #22c55e; /* green */
+  --status-submitted-ring:    #15803d;
+
   --surface: #FFFFFA;
   --surface-2: #F5F4E6;
 
@@ -46,6 +55,15 @@
   --q-delegate:  #fbbf24;
   --q-eliminate: #9ca3af;
 
+  --status-not-started-bg:    #6b7280;
+  --status-not-started-ring:  #9ca3af;
+  --status-in-progress-bg:    #fbbf24;
+  --status-in-progress-ring:  #f59e0b;
+  --status-ready-bg:          #60a5fa;
+  --status-ready-ring:        #3b82f6;
+  --status-submitted-bg:      #4ade80;
+  --status-submitted-ring:    #22c55e;
+
   --surface: #03203f;
   --surface-2: #01183a;
 
@@ -70,6 +88,15 @@
     --q-schedule:  #60a5fa;
     --q-delegate:  #fbbf24;
     --q-eliminate: #9ca3af;
+
+    --status-not-started-bg:    #6b7280;
+    --status-not-started-ring:  #9ca3af;
+    --status-in-progress-bg:    #fbbf24;
+    --status-in-progress-ring:  #f59e0b;
+    --status-ready-bg:          #60a5fa;
+    --status-ready-ring:        #3b82f6;
+    --status-submitted-bg:      #4ade80;
+    --status-submitted-ring:    #22c55e;
 
     --surface: #03203f;
     --surface-2: #01183a;

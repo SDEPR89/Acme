@@ -1,0 +1,186 @@
+/* ---------- StatusDetail (mobile full-page picker) ---------- */
+
+.status-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  /* No backdrop tint — the picker is a full-page view, not a modal
+     over the dashboard. Tap outside the card to close. */
+}
+
+.status-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.status-detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+
+.status-detail-back {
+  align-self: flex-start;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-bottom: 8px;
+  margin-left: -8px;
+  transition: background .15s ease;
+}
+.status-detail-back:hover,
+.status-detail-back:focus-visible {
+  background: var(--glass-bg-strong);
+  outline: none;
+}
+
+.status-detail-task-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  margin: 0;
+  word-break: break-word;
+}
+
+.status-detail-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--fg-muted);
+  margin: 4px 0 0;
+}
+.status-detail-current-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* 2x2 grid of large status circles. Each cell is a button with a
+   circle + label. Current = filled, others = outlined ring. */
+.status-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.status-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px 12px;
+  background: var(--glass-bg-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--fg);
+  transition: background .15s ease, border-color .15s ease, transform .12s ease;
+}
+.status-pick:hover {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border-strong);
+}
+.status-pick:active {
+  transform: scale(0.97);
+}
+.status-pick:focus-visible {
+  outline: 2px solid var(--accent-teal, var(--accent));
+  outline-offset: 2px;
+}
+
+.status-pick-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid var(--glass-border-strong);
+  transition: background .15s ease, border-color .15s ease;
+  flex-shrink: 0;
+}
+/* Filled state — the current status. Apply the status color to the
+   circle background and a darker border in the same hue. */
+.status-pick.is-current .status-pick-circle.status-dot--not_started {
+  background: var(--status-not-started-bg);
+  border-color: var(--status-not-started-ring);
+}
+.status-pick.is-current .status-pick-circle.status-dot--in_progress {
+  background: var(--status-in-progress-bg);
+  border-color: var(--status-in-progress-ring);
+}
+.status-pick.is-current .status-pick-circle.status-dot--ready_to_submit {
+  background: var(--status-ready-bg);
+  border-color: var(--status-ready-ring);
+}
+.status-pick.is-current .status-pick-circle.status-dot--submitted {
+  background: var(--status-submitted-bg);
+  border-color: var(--status-submitted-ring);
+}
+/* When NOT current, show the status's ring color as a faint border
+   so the user can see what color each option will apply. */
+.status-pick:not(.is-current) .status-pick-circle.status-dot--not_started {
+  border-color: var(--status-not-started-ring);
+}
+.status-pick:not(.is-current) .status-pick-circle.status-dot--in_progress {
+  border-color: var(--status-in-progress-ring);
+}
+.status-pick:not(.is-current) .status-pick-circle.status-dot--ready_to_submit {
+  border-color: var(--status-ready-ring);
+}
+.status-pick:not(.is-current) .status-pick-circle.status-dot--submitted {
+  border-color: var(--status-submitted-ring);
+}
+
+.status-pick-label {
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--fg);
+}
+.status-pick.is-current .status-pick-label {
+  font-weight: 600;
+}
+
+/* Meta line at the bottom: subject · due date+time. */
+.status-detail-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--fg-muted);
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--glass-border);
+}
+.status-detail-meta .subject-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-detail-sep {
+  opacity: 0.6;
+}

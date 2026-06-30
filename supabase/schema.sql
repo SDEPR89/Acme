@@ -37,6 +37,31 @@ create table if not exists tasks (
   updated_at    timestamptz not null default now()
 );
 
+-- ---------------------------------------------------------------------------
+-- Per-task workflow status (Not started / In progress / Ready to submit /
+-- Submitted). Stored as text (not enum) so future values can be added
+-- without a migration. The CHECK constraint below keeps the value space
+-- closed at the database layer; the client enum in src/types.ts mirrors
+-- these four values. `not_started` is the default so rows that pre-date
+-- this column read back with a sensible value automatically.
+-- ---------------------------------------------------------------------------
+alter table tasks
+  add column if not exists status text not null default 'not_started';
+
+-- Optional due time of day. time without timezone so the user enters
+-- and reads it in their local time, matching how due_date works.
+-- The HTML <input type="time"> sends 'HH:MM' which Postgres coerces to
+-- 'HH:MM:SS' on the way in; we read it back as 'HH:MM:SS' over PostgREST.
+alter table tasks
+  add column if not exists due_time time;
+
+-- CHECK constraint: drop + re-add so re-running the schema is a no-op
+-- if the constraint already exists with the right definition.
+alter table tasks drop constraint if exists tasks_status_check;
+alter table tasks
+  add constraint tasks_status_check
+  check (status in ('not_started','in_progress','ready_to_submit','submitted'));
+
 create index if not exists tasks_user_quadrant
   on tasks (user_id, quadrant, completed_at);
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { Subject, Task, Quadrant } from '../types';
-import { QUADRANTS } from '../types';
+import type { Subject, Task, Quadrant, Status } from '../types';
+import { QUADRANTS, STATUSES } from '../types';
 import { SubjectManager } from './SubjectManager';
 import { SubjectSelect } from './SubjectSelect';
 
@@ -16,7 +16,11 @@ interface Props {
     description: string | null;
     subject_id: string | null;
     due_date: string | null;
+    // 'HH:MM' from the time input, or null. Postgres normalizes to
+    // 'HH:MM:SS' on write and we read it back the same way.
+    due_time: string | null;
     quadrant: Quadrant;
+    status: Status;
   }) => Promise<boolean>;
   onDelete?: () => void;
   // Hook-level predicate: passed straight through to SubjectSelect
@@ -40,7 +44,14 @@ export function TaskModal({
   const [description, setDescription] = useState(initial.description ?? '');
   const [subjectId, setSubjectId] = useState<string>(initial.subject_id ?? '');
   const [dueDate, setDueDate] = useState<string>(initial.due_date ?? '');
+  // Postgres time round-trips as 'HH:MM:SS'; the <input type="time">
+  // expects 'HH:MM'. Slice the first 5 chars on the way in so the
+  // input shows the right value when editing an existing task.
+  const [dueTime, setDueTime] = useState<string>(
+    initial.due_time ? initial.due_time.slice(0, 5) : '',
+  );
   const [quadrant, setQuadrant] = useState<Quadrant>(initial.quadrant);
+  const [status, setStatus] = useState<Status>(initial.status ?? 'not_started');
   const [addingSubject, setAddingSubject] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -87,7 +98,11 @@ export function TaskModal({
       description: description.trim() || null,
       subject_id: subjectId || null,
       due_date: dueDate || null,
+      // Empty string from the <input type="time"> means "no time set" —
+      // translate to null so the column stores null rather than ''.
+      due_time: dueTime || null,
       quadrant,
+      status,
     });
     if (!ok) {
       setError("Couldn't save the task. Please try again.");
@@ -173,6 +188,22 @@ export function TaskModal({
               </div>
 
               <div className="field">
+                <label htmlFor="task-time">
+                  Time <span className="muted">(optional)</span>
+                </label>
+                <input
+                  id="task-time"
+                  className="input"
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => setDueTime(e.target.value)}
+                  disabled={busy}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="field">
                 <label htmlFor="task-quadrant">Quadrant</label>
                 <select
                   id="task-quadrant"
@@ -184,6 +215,23 @@ export function TaskModal({
                   {QUADRANTS.map((q) => (
                     <option key={q.id} value={q.id}>
                       {q.order}. {q.title} — {q.subtitle}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label htmlFor="task-status">Status</label>
+                <select
+                  id="task-status"
+                  className="input"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as Status)}
+                  disabled={busy}
+                >
+                  {STATUSES.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
                     </option>
                   ))}
                 </select>
