@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -21,10 +21,10 @@ import { SettingsModal } from './SettingsModal';
 import { Calendar } from './Calendar';
 import { DoneList } from './DoneList';
 import { StatusDetail } from './StatusDetail';
+import { Visualizer3D } from './Visualizer3D';
 import './Dashboard.css';
 
-type View = 'active' | 'done';
-type MobileTab = 'matrix' | 'calendar';
+type View = 'dashboard' | 'matrix' | 'calendar' | 'completed';
 
 interface Props {
   userId: string;
@@ -80,7 +80,7 @@ export function Dashboard({
   });
   const confirm = useConfirm();
 
-  const [view, setView] = useState<View>('active');
+  const [view, setView] = useState<View>('dashboard');
   const [editing, setEditing] = useState<
     | { kind: 'create'; quadrant: QuadrantId; dueDate?: string }
     | { kind: 'edit'; task: Task }
@@ -92,17 +92,9 @@ export function Dashboard({
   const [statusDetailTask, setStatusDetailTask] = useState<Task | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const [mobileTab, setMobileTab] = useState<MobileTab>('matrix');
   // Live viewport query — mirrors the CSS breakpoint at
   // Dashboard.css (`@media (max-width: 720px)`).
   const isMobile = useMediaQuery('(max-width: 720px)');
-  // When the viewport grows past the breakpoint, reset the mobile
-  // tab back to `matrix` so a rotating phone / resized browser
-  // doesn't strand the user on a Calendar view they can't reach
-  // from desktop.
-  useEffect(() => {
-    if (isMobile === false) setMobileTab('matrix');
-  }, [isMobile]);
 
   // Drag-and-drop logic (collisions, refs, handlers, live grouping)
   // lives in useDragAndDrop. Dashboard owns the JSX shell.
@@ -265,83 +257,91 @@ export function Dashboard({
   return (
     <div
       className={
-        isMobile === true && mobileTab === 'calendar'
-          ? 'dashboard is-mobile-calendar'
-          : 'dashboard'
+        isMobile === true
+          ? 'dashboard-mobile-container'
+          : 'dashboard-desktop-container'
       }
     >
-      <DashboardHeader
-        isAnonymous={isAnonymous}
-        userDisplayUsername={userDisplayUsername}
-        userUsername={userUsername}
-        userEmail={userEmail}
-        // The mobile bottom nav already exposes a Settings tab, so the
-        // header gear would duplicate it. Skip the button entirely on
-        // mobile (`!== true` keeps it visible during the first frame
-        // before useMediaQuery resolves to true; otherwise the gear
-        // would flash in then disappear).
-        onOpenSettings={() => setSettingsOpen(true)}
-        isMobile={isMobile}
-      />
-
-      <DashboardToolbar
-        view={view}
-        activeCount={activeCount}
-        doneCount={doneCount}
-        onChangeView={setView}
-      />
-
-      {error && (
-        <p className="dashboard-error" role="alert">
-          {error}
-        </p>
+      {isMobile !== true && (
+        <DashboardSidebar
+          view={view}
+          onChangeView={setView}
+          activeCount={activeCount}
+          doneCount={doneCount}
+          isAnonymous={isAnonymous}
+          userDisplayUsername={userDisplayUsername}
+          userUsername={userUsername}
+          userEmail={userEmail}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onSignOut={handleSignOut}
+        />
       )}
 
-      {isAnonymous && (
-        <div className="dashboard-guest-banner" role="status">
-          <span>
-            You're browsing as a guest. Your tasks save to this browser only.{' '}
-            <button
-              type="button"
-              className="inline-link"
-              onClick={() => setSettingsOpen(true)}
-            >
-              Add an email and password
-            </button>{' '}
-            to keep them across devices.
-          </span>
-        </div>
+      <div className="dashboard-main-content">
+        {isMobile === true && (
+          <DashboardHeader
+            isAnonymous={isAnonymous}
+            userDisplayUsername={userDisplayUsername}
+            userUsername={userUsername}
+            userEmail={userEmail}
+            onOpenSettings={() => setSettingsOpen(true)}
+            isMobile={isMobile}
+          />
+        )}
+
+        {error && (
+          <p className="dashboard-error" role="alert">
+            {error}
+          </p>
+        )}
+
+        {isAnonymous && (
+          <div className="dashboard-guest-banner" role="status">
+            <span>
+              You're browsing as a guest. Your tasks save to this browser only.{' '}
+              <button
+                type="button"
+                className="inline-link"
+                onClick={() => setSettingsOpen(true)}
+              >
+                Add an email and password
+              </button>{' '}
+              to keep them across devices.
+            </span>
+          </div>
+        )}
+
+        <DashboardView
+          activeEditingTaskId={editing?.kind === 'edit' ? editing.task.id : null}
+          view={view}
+          dnd={dnd}
+          grouped={grouped}
+          liveGroups={dnd.liveGroups}
+          activeTasksForCalendar={activeTasksForCalendar}
+          loading={loading}
+          subjects={subjects}
+          onAdd={handleAdd}
+          onAddOnDate={handleAddOnDate}
+          onEdit={handleEdit}
+          onToggleComplete={handleToggleComplete}
+          onDelete={handleDeleteTaskFromCard}
+          isTaskBusy={isTaskBusy}
+          reorderBusy={reorderBusy}
+          renderOverlay={renderOverlay}
+          // Mobile only: tap a task's status dot to open the full-page
+          // picker. On desktop we pass undefined so the card renders a
+          // non-interactive <span> for the dot.
+          onOpenStatusDetail={isMobile === true ? setStatusDetailTask : undefined}
+        />
+      </div>
+
+      {isMobile === true && (
+        <DashboardMobileTabbar
+          view={view}
+          onChangeView={setView}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
       )}
-
-      <DashboardView
-        mobileTab={mobileTab}
-        isMobile={isMobile}
-        view={view}
-        dnd={dnd}
-        grouped={grouped}
-        liveGroups={dnd.liveGroups}
-        activeTasksForCalendar={activeTasksForCalendar}
-        loading={loading}
-        subjects={subjects}
-        onAdd={handleAdd}
-        onAddOnDate={handleAddOnDate}
-        onEdit={handleEdit}
-        onToggleComplete={handleToggleComplete}
-        onDelete={handleDeleteTaskFromCard}
-        isTaskBusy={isTaskBusy}
-        reorderBusy={reorderBusy}
-        renderOverlay={renderOverlay}
-        // Mobile only: tap a task's status dot to open the full-page
-        // picker. On desktop we pass undefined so the card renders a
-        // non-interactive <span> for the dot.
-        onOpenStatusDetail={isMobile === true ? setStatusDetailTask : undefined}
-      />
-
-      <DashboardMobileTabbar
-        mobileTab={mobileTab}
-        onChangeTab={setMobileTab}
-        onOpenSettings={() => setSettingsOpen(true)}
-      />
 
       {editing?.kind === 'create' && (
         <TaskModal
@@ -391,7 +391,6 @@ export function Dashboard({
           isAnonymous={isAnonymous}
           onClose={() => setSettingsOpen(false)}
           onUsernameUpdated={onUsernameUpdated}
-          onSignOut={handleSignOut}
           onAccountDeleted={onAccountDeleted}
           onAccountUpgraded={onAccountUpgraded}
         />
@@ -420,9 +419,8 @@ export function Dashboard({
 // ---------------------------------------------------------------------------
 // Sub-components — inline because they're tightly coupled to
 // Dashboard's state and aren't reused elsewhere. Each owns one
-// visual concern: the header, the Active/Done toolbar, the
-// view-switching branch (matrix / calendar / done), and the mobile
-// tab bar. JSX factored out by concern, not by reuse.
+// visual concern: the header, the Sidebar, the view-switching branch,
+// and the mobile tab bar. JSX factored out by concern, not by reuse.
 // ---------------------------------------------------------------------------
 
 interface DashboardHeaderProps {
@@ -430,12 +428,6 @@ interface DashboardHeaderProps {
   userDisplayUsername: string | null;
   userUsername: string | null;
   userEmail: string | null;
-  // `isMobile: true` means we're below the mobile breakpoint and the
-  // bottom-nav Settings tab is the only settings entry — the header
-  // gear is hidden in that case. `false` means desktop; `null` (the
-  // first-frame state before useMediaQuery resolves) renders the gear
-  // to avoid a flash. The prop is plumbed through rather than reading
-  // useMediaQuery locally so the breakpoint stays owned by Dashboard.
   isMobile: boolean | null;
   onOpenSettings: () => void;
 }
@@ -445,7 +437,6 @@ function DashboardHeader({
   userDisplayUsername,
   userUsername,
   userEmail,
-  isMobile,
   onOpenSettings,
 }: DashboardHeaderProps) {
   const { theme, toggle: toggleTheme } = useTheme();
@@ -462,74 +453,180 @@ function DashboardHeader({
       </div>
       <div className="dashboard-user">
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
-        {isMobile !== true && (
-          <button
-            type="button"
-            className="header-icon-btn header-settings-btn"
-            onClick={onOpenSettings}
-            aria-label="Open settings"
-            title="Settings"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </button>
-        )}
+        <button
+          type="button"
+          className="header-icon-btn header-settings-btn"
+          onClick={onOpenSettings}
+          aria-label="Open settings"
+          title="Settings"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
       </div>
     </header>
   );
 }
 
-interface DashboardToolbarProps {
+interface DashboardSidebarProps {
   view: View;
+  onChangeView: (v: View) => void;
   activeCount: number;
   doneCount: number;
-  onChangeView: (v: View) => void;
+  isAnonymous: boolean;
+  userDisplayUsername: string | null;
+  userUsername: string | null;
+  userEmail: string | null;
+  onOpenSettings: () => void;
+  onSignOut: () => void;
 }
 
-function DashboardToolbar({ view, activeCount, doneCount, onChangeView }: DashboardToolbarProps) {
+function DashboardSidebar({
+  view,
+  onChangeView,
+  activeCount,
+  doneCount,
+  isAnonymous,
+  userDisplayUsername,
+  userUsername,
+  userEmail,
+  onOpenSettings,
+  onSignOut,
+}: DashboardSidebarProps) {
+  const { theme, toggle: toggleTheme } = useTheme();
   return (
-    <div className="dashboard-toolbar">
-      <h1>Eisenhower Matrix</h1>
-      <div className="view-toggle" role="tablist" aria-label="View">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === 'active'}
-          className={`view-tab${view === 'active' ? ' is-active' : ''}`}
-          onClick={() => onChangeView('active')}
-        >
-          Active <span className="view-count">{activeCount}</span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === 'done'}
-          className={`view-tab${view === 'done' ? ' is-active' : ''}`}
-          onClick={() => onChangeView('done')}
-        >
-          Done <span className="view-count">{doneCount}</span>
-        </button>
+    <aside className="dashboard-sidebar">
+      <div className="brand">
+        <img className="brand-mark" src="/logo.png" alt="Kurhona" />
+        <span className="brand-name">Kurhona</span>
       </div>
-    </div>
+
+      <nav className="sidebar-nav" aria-label="Main Navigation">
+        <button
+          type="button"
+          className={`sidebar-link${view === 'dashboard' ? ' is-active' : ''}`}
+          onClick={() => onChangeView('dashboard')}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="6" />
+            <circle cx="12" cy="12" r="2" />
+          </svg>
+          <span>Dashboard</span>
+        </button>
+
+        <button
+          type="button"
+          className={`sidebar-link${view === 'matrix' ? ' is-active' : ''}`}
+          onClick={() => onChangeView('matrix')}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+          <span>Tasks</span>
+          <span className="sidebar-count">{activeCount}</span>
+        </button>
+
+        <button
+          type="button"
+          className={`sidebar-link${view === 'calendar' ? ' is-active' : ''}`}
+          onClick={() => onChangeView('calendar')}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <span>Calendar</span>
+        </button>
+
+        <button
+          type="button"
+          className={`sidebar-link${view === 'completed' ? ' is-active' : ''}`}
+          onClick={() => onChangeView('completed')}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+          <span>Completed</span>
+          <span className="sidebar-count">{doneCount}</span>
+        </button>
+      </nav>
+
+      <div className="sidebar-footer">
+        <div className="sidebar-user-info">
+          <span className="username">
+            {isAnonymous ? 'Guest' : userDisplayUsername ?? userUsername ?? userEmail}
+          </span>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+        </div>
+        
+        <div className="sidebar-actions">
+          <button
+            type="button"
+            className="sidebar-action-btn"
+            onClick={onOpenSettings}
+            title="Settings"
+            aria-label="Settings"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+          
+          <button
+            type="button"
+            className="sidebar-action-btn"
+            onClick={onSignOut}
+            title="Sign Out"
+            aria-label="Sign Out"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
   );
 }
 
 interface DashboardMobileTabbarProps {
-  mobileTab: MobileTab;
-  onChangeTab: (t: MobileTab) => void;
+  view: View;
+  onChangeView: (v: View) => void;
   onOpenSettings: () => void;
 }
 
-function DashboardMobileTabbar({ mobileTab, onChangeTab, onOpenSettings }: DashboardMobileTabbarProps) {
+function DashboardMobileTabbar({ view, onChangeView, onOpenSettings }: DashboardMobileTabbarProps) {
   return (
     <nav className="mobile-tabbar" aria-label="Dashboard sections">
       <button
         type="button"
-        className={`mobile-tab${mobileTab === 'matrix' ? ' is-active' : ''}`}
-        onClick={() => onChangeTab('matrix')}
-        aria-current={mobileTab === 'matrix' ? 'page' : undefined}
+        className={`mobile-tab${view === 'dashboard' ? ' is-active' : ''}`}
+        onClick={() => onChangeView('dashboard')}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="6" />
+          <circle cx="12" cy="12" r="2" />
+        </svg>
+        <span>Dashboard</span>
+      </button>
+
+      <button
+        type="button"
+        className={`mobile-tab${view === 'matrix' ? ' is-active' : ''}`}
+        onClick={() => onChangeView('matrix')}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3" y="3" width="7" height="7" rx="1.2" />
@@ -537,13 +634,13 @@ function DashboardMobileTabbar({ mobileTab, onChangeTab, onOpenSettings }: Dashb
           <rect x="3" y="14" width="7" height="7" rx="1.2" />
           <rect x="14" y="14" width="7" height="7" rx="1.2" />
         </svg>
-        <span>Matrix</span>
+        <span>Tasks</span>
       </button>
+
       <button
         type="button"
-        className={`mobile-tab${mobileTab === 'calendar' ? ' is-active' : ''}`}
-        onClick={() => onChangeTab('calendar')}
-        aria-current={mobileTab === 'calendar' ? 'page' : undefined}
+        className={`mobile-tab${view === 'calendar' ? ' is-active' : ''}`}
+        onClick={() => onChangeView('calendar')}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -553,6 +650,19 @@ function DashboardMobileTabbar({ mobileTab, onChangeTab, onOpenSettings }: Dashb
         </svg>
         <span>Calendar</span>
       </button>
+
+      <button
+        type="button"
+        className={`mobile-tab${view === 'completed' ? ' is-active' : ''}`}
+        onClick={() => onChangeView('completed')}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span>Completed</span>
+      </button>
+
       <button
         type="button"
         className="mobile-tab mobile-tab--settings"
@@ -570,8 +680,6 @@ function DashboardMobileTabbar({ mobileTab, onChangeTab, onOpenSettings }: Dashb
 }
 
 interface DashboardViewProps {
-  mobileTab: MobileTab;
-  isMobile: boolean | null;
   view: View;
   dnd: ReturnType<typeof useDragAndDrop>;
   grouped: { groups: Record<QuadrantId, Task[]>; done: Task[] };
@@ -587,16 +695,12 @@ interface DashboardViewProps {
   isTaskBusy?: (id: string) => boolean;
   reorderBusy: boolean;
   renderOverlay: () => React.ReactNode;
-  // Mobile-only: when present, tapping a task's status dot opens the
-  // full-page StatusDetail picker. The dashboard passes a no-op on
-  // desktop so the dot is a display-only indicator there.
   onOpenStatusDetail?: (t: Task) => void;
+  activeEditingTaskId: string | null;
 }
 
 function DashboardView(props: DashboardViewProps) {
   const {
-    mobileTab,
-    isMobile,
     view,
     dnd,
     grouped,
@@ -613,13 +717,34 @@ function DashboardView(props: DashboardViewProps) {
     reorderBusy,
     renderOverlay,
     onOpenStatusDetail,
+    activeEditingTaskId,
   } = props;
 
-  // Three branches: mobile calendar, active (matrix + DnD), done.
-  // The mobile-calendar path skips <DndContext> so calendar drags
-  // don't compete with matrix drops; the active path installs a
-  // single context for both matrix and (desktop) calendar mounts.
-  if (isMobile === true && mobileTab === 'calendar') {
+  // View branch router
+  if (view === 'dashboard') {
+    const activeCount =
+      grouped.groups.do_first.length +
+      grouped.groups.schedule.length +
+      grouped.groups.delegate.length +
+      grouped.groups.eliminate.length;
+    const doneCount = grouped.done.length;
+    const totalCount = activeCount + doneCount;
+    const completionPercentage = totalCount > 0 ? doneCount / totalCount : 0;
+
+    return (
+      <div className="dashboard-view dashboard-pane dashboard-pane--3d" key="3d">
+        <Visualizer3D
+          tasks={activeTasksForCalendar}
+          subjects={subjects}
+          onEdit={onEdit}
+          completionPercentage={completionPercentage}
+          activeEditingTaskId={activeEditingTaskId}
+        />
+      </div>
+    );
+  }
+
+  if (view === 'calendar') {
     return (
       <div className="dashboard-view dashboard-pane dashboard-pane--calendar" key="cal">
         <Calendar tasks={activeTasksForCalendar} onTaskClick={onEdit} onAddOnDate={onAddOnDate} />
@@ -627,9 +752,9 @@ function DashboardView(props: DashboardViewProps) {
     );
   }
 
-  if (view === 'active') {
+  if (view === 'matrix') {
     return (
-      <div className="dashboard-view dashboard-pane dashboard-pane--matrix" key="active">
+      <div className="dashboard-view dashboard-pane dashboard-pane--matrix" key="matrix">
         <DndContext
           sensors={dnd.sensors}
           collisionDetection={dnd.collisionDetection}
@@ -656,9 +781,6 @@ function DashboardView(props: DashboardViewProps) {
               />
             ))}
           </div>
-          {isMobile !== true && (
-            <Calendar tasks={activeTasksForCalendar} onTaskClick={onEdit} onAddOnDate={onAddOnDate} />
-          )}
           <DragOverlay
             modifiers={[snapCenterToCursor]}
             zIndex={1000}
@@ -672,7 +794,7 @@ function DashboardView(props: DashboardViewProps) {
   }
 
   return (
-    <div className="dashboard-view" key="done">
+    <div className="dashboard-view" key="completed">
       <DoneList
         tasks={grouped.done}
         subjects={subjects}

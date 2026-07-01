@@ -2260,3 +2260,275 @@ button.task-status-dot.status-dot--submitted::before {
   background: var(--glass-bg-strong);
   color: var(--fg);
 }
+
+/* =============================================================
+   Sidebar Layout & View Containers
+   ============================================================= */
+
+.dashboard-desktop-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background: radial-gradient(circle at center, var(--page-bg-top) 0%, var(--page-bg-bottom) 100%);
+  color: var(--fg);
+  isolation: isolate;
+  transition: background .35s ease, color .35s ease;
+}
+
+:root[data-theme='light'] .dashboard-desktop-container {
+  background:
+    radial-gradient(620px 620px at 50% 18%, var(--aurora-a) 0%, transparent 65%),
+    radial-gradient(560px 560px at 50% 40%, var(--aurora-b) 0%, transparent 70%),
+    radial-gradient(520px 520px at 50% 28%, var(--aurora-c) 0%, transparent 72%),
+    radial-gradient(circle at center, #FFFFF0 0%, #efeccf 100%);
+  animation: dashboard-light-drift 32s ease-in-out infinite alternate;
+}
+
+.dashboard-sidebar {
+  width: 150px;
+  height: 100%;
+  flex-shrink: 0;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 12px;
+  box-sizing: border-box;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.dashboard-sidebar:hover {
+  border-right-color: var(--glass-border-strong);
+}
+
+.dashboard-sidebar .brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.dashboard-sidebar .brand-mark {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.dashboard-sidebar .brand-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--fg);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+  margin-top: 24px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sidebar-link svg {
+  opacity: 0.7;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover {
+  background: var(--glass-bg-soft);
+  color: var(--fg);
+  transform: translateX(2px);
+}
+
+.sidebar-link:hover svg {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.sidebar-link.is-active {
+  background: var(--glass-bg-strong);
+  color: var(--fg);
+  border-color: var(--glass-border-strong);
+  box-shadow: var(--glass-shadow-hover);
+}
+
+.sidebar-link.is-active svg {
+  opacity: 1;
+  color: var(--check-accent);
+}
+
+.sidebar-count {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  color: var(--fg-soft);
+  padding: 1px 4px;
+  border-radius: 6px;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--divider);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebar-user-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.sidebar-user-info .username {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--fg-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 70px;
+}
+
+.sidebar-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.sidebar-action-btn {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  color: var(--fg-soft);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-action-btn:hover {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border-strong);
+  color: var(--fg);
+  transform: translateY(-1px);
+}
+
+.dashboard-main-content {
+  flex-grow: 1;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Container adaptations for views */
+.dashboard-pane {
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.dashboard-pane--matrix {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 24px;
+  box-sizing: border-box;
+  gap: 24px;
+}
+
+.dashboard-pane--calendar {
+  padding: 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.dashboard-pane--3d {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* Mobile specific overrides */
+.dashboard-mobile-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: radial-gradient(circle at center, var(--page-bg-top) 0%, var(--page-bg-bottom) 100%);
+  padding-bottom: 84px; /* Space for bottom tab bar */
+  box-sizing: border-box;
+}
+
+:root[data-theme='light'] .dashboard-mobile-container {
+  background:
+    radial-gradient(620px 620px at 50% 18%, var(--aurora-a) 0%, transparent 65%),
+    radial-gradient(560px 560px at 50% 40%, var(--aurora-b) 0%, transparent 70%),
+    radial-gradient(520px 520px at 50% 28%, var(--aurora-c) 0%, transparent 72%),
+    radial-gradient(circle at center, #FFFFF0 0%, #efeccf 100%);
+  animation: dashboard-light-drift 32s ease-in-out infinite alternate;
+}
+
+.dashboard-mobile-container .dashboard-header {
+  padding: 16px;
+  margin-bottom: 0;
+}
+
+.dashboard-mobile-container .dashboard-main-content {
+  height: auto;
+  flex-grow: 1;
+  overflow: visible;
+}
+
+.dashboard-mobile-container .dashboard-pane--matrix {
+  padding: 16px;
+  flex-direction: column;
+  overflow-y: visible;
+  height: auto;
+}
+
+.dashboard-mobile-container .dashboard-pane--calendar {
+  padding: 16px;
+  height: auto;
+}
+
+.dashboard-mobile-container .dashboard-view[key="completed"] {
+  padding: 16px;
+}

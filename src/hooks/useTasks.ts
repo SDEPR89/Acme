@@ -130,6 +130,15 @@ export function useTasks(userId: string | null, options: UseTasksOptions = {}) {
 
     let cancelled = false;
 
+    // Filter out completed tasks older than 2 weeks (14 days)
+    const filterOldCompleted = (list: Task[]): Task[] => {
+      const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+      return list.filter((t) => {
+        if (!t.completed_at) return true;
+        return new Date(t.completed_at).getTime() >= cutoff;
+      });
+    };
+
     async function load() {
       setLoading(true);
       setError(null);
@@ -145,7 +154,8 @@ export function useTasks(userId: string | null, options: UseTasksOptions = {}) {
         // user can act on. Network errors reach this branch too.
         surface("Couldn't load your tasks. Refresh to try again.");
       } else {
-        setTasks((data ?? []) as Task[]);
+        const rawTasks = (data ?? []) as Task[];
+        setTasks(filterOldCompleted(rawTasks));
       }
       setLoading(false);
     }
@@ -159,12 +169,19 @@ export function useTasks(userId: string | null, options: UseTasksOptions = {}) {
         { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${userId}` },
         (payload) => {
           setTasks((prev) => {
+            const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
             if (payload.eventType === 'INSERT') {
               const row = payload.new as Task;
+              if (row.completed_at && new Date(row.completed_at).getTime() < cutoff) {
+                return prev;
+              }
               return prev.some((t) => t.id === row.id) ? prev : [row, ...prev];
             }
             if (payload.eventType === 'UPDATE') {
               const row = payload.new as Task;
+              if (row.completed_at && new Date(row.completed_at).getTime() < cutoff) {
+                return prev.filter((t) => t.id !== row.id);
+              }
               return prev.map((t) => (t.id === row.id ? row : t));
             }
             if (payload.eventType === 'DELETE') {

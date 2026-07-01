@@ -13,7 +13,6 @@ interface Props {
   isAnonymous: boolean;
   onClose: () => void;
   onUsernameUpdated: (newDisplayUsername: string) => void;
-  onSignOut: () => void;
   onAccountDeleted: () => void;
   onAccountUpgraded: (newEmail: string) => void;
 }
@@ -29,7 +28,6 @@ export function SettingsModal({
   isAnonymous,
   onClose,
   onUsernameUpdated,
-  onSignOut,
   onAccountDeleted,
   onAccountUpgraded,
 }: Props) {
@@ -79,8 +77,6 @@ export function SettingsModal({
             currentUsername={currentUsername}
             currentDisplayUsername={currentDisplayUsername}
             isAnonymous={isAnonymous}
-            onClose={onClose}
-            onSignOut={onSignOut}
           />
           {isAnonymous ? (
             <UpgradeAccountSection
