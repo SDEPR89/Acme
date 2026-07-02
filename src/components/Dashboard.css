@@ -375,9 +375,9 @@
     bottom: 0;
     z-index: 30;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0));
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0));
     background: var(--glass-bg-strong);
     border-top: 1px solid var(--glass-border);
     backdrop-filter: blur(18px) saturate(160%);
@@ -2286,6 +2286,7 @@ button.task-status-dot.status-dot--submitted::before {
   animation: dashboard-light-drift 32s ease-in-out infinite alternate;
 }
 
+/* ---- Sidebar base ---- */
 .dashboard-sidebar {
   width: 150px;
   height: 100%;
@@ -2300,11 +2301,58 @@ button.task-status-dot.status-dot--submitted::before {
   padding: 24px 12px;
   box-sizing: border-box;
   z-index: 10;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), padding 0.3s;
 }
 
 .dashboard-sidebar:hover {
   border-right-color: var(--glass-border-strong);
+}
+
+/* ---- Tablet: collapsed icon-only sidebar (64px) ---- */
+.dashboard-sidebar--collapsed {
+  width: 64px;
+  padding: 20px 8px;
+  align-items: center;
+}
+
+.dashboard-sidebar--collapsed .brand {
+  justify-content: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.dashboard-sidebar--collapsed .sidebar-nav {
+  align-items: center;
+  margin-top: 20px;
+}
+
+.dashboard-sidebar--collapsed .sidebar-link {
+  justify-content: center;
+  padding: 12px 8px;
+  width: 44px;
+  position: relative;
+}
+
+.dashboard-sidebar--collapsed .sidebar-footer {
+  align-items: center;
+}
+
+.dashboard-sidebar--collapsed .sidebar-actions {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Badge dot for counts in collapsed mode */
+.sidebar-count--dot {
+  position: absolute;
+  top: 6px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  font-size: 0.65rem;
+  padding: 1px 3px;
+  border-radius: 8px;
 }
 
 .dashboard-sidebar .brand {
@@ -2319,6 +2367,7 @@ button.task-status-dot.status-dot--submitted::before {
   width: 24px;
   height: 24px;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .dashboard-sidebar .brand-name {
@@ -2352,6 +2401,8 @@ button.task-status-dot.status-dot--submitted::before {
   transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   width: 100%;
   box-sizing: border-box;
+  /* Minimum 44px touch target */
+  min-height: 44px;
 }
 
 .sidebar-link svg {
@@ -2364,6 +2415,10 @@ button.task-status-dot.status-dot--submitted::before {
   background: var(--glass-bg-soft);
   color: var(--fg);
   transform: translateX(2px);
+}
+
+.dashboard-sidebar--collapsed .sidebar-link:hover {
+  transform: none;
 }
 
 .sidebar-link:hover svg {
@@ -2449,6 +2504,7 @@ button.task-status-dot.status-dot--submitted::before {
   transform: translateY(-1px);
 }
 
+/* ---- Main content area ---- */
 .dashboard-main-content {
   flex-grow: 1;
   height: 100vh;
@@ -2475,6 +2531,27 @@ button.task-status-dot.status-dot--submitted::before {
   gap: 24px;
 }
 
+/* Tablet: reduce padding so quadrants have more room */
+@media (max-width: 1024px) and (min-width: 721px) {
+  .dashboard-pane--matrix {
+    padding: 16px;
+    gap: 16px;
+  }
+  .dashboard-pane--calendar {
+    padding: 16px;
+  }
+  /* Wider sidebar label text gets cut — let matrix wrap to 2-col grid */
+  .dashboard-pane--matrix .matrix-grid {
+    min-width: unset;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+  /* Sidebar is narrower on tablet so give more room to content */
+  .dashboard-main-content {
+    min-width: 0;
+  }
+}
+
 .dashboard-pane--calendar {
   padding: 24px;
   box-sizing: border-box;
@@ -2487,14 +2564,16 @@ button.task-status-dot.status-dot--submitted::before {
   position: relative;
 }
 
-/* Mobile specific overrides */
+/* ---- Mobile specific overrides ---- */
 .dashboard-mobile-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport height — prevents iOS URL bar overlap */
   background: radial-gradient(circle at center, var(--page-bg-top) 0%, var(--page-bg-bottom) 100%);
   padding-bottom: 84px; /* Space for bottom tab bar */
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 :root[data-theme='light'] .dashboard-mobile-container {
@@ -2529,6 +2608,15 @@ button.task-status-dot.status-dot--submitted::before {
   height: auto;
 }
 
-.dashboard-mobile-container .dashboard-view[key="completed"] {
-  padding: 16px;
+.dashboard-mobile-container .dashboard-pane--3d {
+  height: calc(100dvh - 140px); /* header + tabbar */
+  min-height: 320px;
 }
+
+/* Mobile tab bar always shows at bottom */
+@media (max-width: 720px) {
+  .mobile-tabbar {
+    display: grid;
+  }
+}
+
