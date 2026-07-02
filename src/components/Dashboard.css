@@ -1288,6 +1288,9 @@ button.task-status-dot.status-dot--submitted::before {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+
 }
 
 /* Cross-fade when the user swaps between the task form and the in-modal
@@ -1305,9 +1308,11 @@ button.task-status-dot.status-dot--submitted::before {
 
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
+  min-width: 0;
 }
+
 
 /* ---- Mobile: bottom-sheet modal ---- */
 @media (max-width: 720px) {
@@ -1321,11 +1326,13 @@ button.task-status-dot.status-dot--submitted::before {
   .modal {
     max-width: 100%;
     width: 100%;
+    box-sizing: border-box;
     max-height: calc(92dvh - env(safe-area-inset-bottom, 0px));
     border-radius: 20px 20px 0 0;
-    padding: 20px 18px calc(16px + env(safe-area-inset-bottom, 0px));
+    padding: 28px 18px calc(16px + env(safe-area-inset-bottom, 0px));
     animation: modal-in-mobile .32s cubic-bezier(.2, .8, .2, 1);
   }
+
 
   /* Drag-handle indicator (visual only) */
   .modal::after {
@@ -1385,6 +1392,7 @@ button.task-status-dot.status-dot--submitted::before {
 .task-form .field {
   display: grid;
   gap: 6px;
+  min-width: 0; /* prevents grid blowout */
 }
 
 .task-form .field label {
@@ -1397,6 +1405,9 @@ button.task-status-dot.status-dot--submitted::before {
 .task-form .input,
 .task-form .textarea {
   width: 100%;
+  max-width: 100%;       /* safety net for date/time inputs */
+  min-width: 0;          /* allow shrinking inside grid cells */
+  box-sizing: border-box; /* padding doesn't add to width */
   padding: 11px 12px;
   border: 1px solid var(--input-border);
   border-radius: 10px;
@@ -1535,10 +1546,15 @@ button.task-status-dot.status-dot--submitted::before {
 .subject-select {
   position: relative;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .subject-select-trigger {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
