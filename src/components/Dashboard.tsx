@@ -11,6 +11,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import { useToast } from '../hooks/useToast';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
+import { useNotifications } from '../hooks/useNotifications';
 import { QUADRANTS } from '../types';
 import type { Quadrant as QuadrantId, Task, Subject, Status } from '../types';
 import { ThemeToggle } from './ThemeToggle';
@@ -98,6 +99,11 @@ export function Dashboard({
   // ≥1025px → desktop (full sidebar)
   const isMobile = useMediaQuery('(max-width: 720px)');
   const isTablet = useMediaQuery('(min-width: 721px) and (max-width: 1024px)');
+
+  // Deadline notification system — schedules browser push notifications
+  // for tasks with upcoming due dates. Only active when the user opts in
+  // via the bell toggle in the sidebar.
+  const notif = useNotifications(tasks);
 
   // Drag-and-drop logic (collisions, refs, handlers, live grouping)
   // lives in useDragAndDrop. Dashboard owns the JSX shell.
@@ -280,7 +286,12 @@ export function Dashboard({
           onOpenSettings={() => setSettingsOpen(true)}
           onSignOut={handleSignOut}
           isCollapsed={isTablet === true}
+          notifSupported={notif.isSupported}
+          notifPermission={notif.permission}
+          notifEnabled={notif.isEnabled}
+          onNotifToggle={notif.toggle}
         />
+
       )}
 
       <div className="dashboard-main-content">
@@ -488,6 +499,11 @@ interface DashboardSidebarProps {
   onOpenSettings: () => void;
   onSignOut: () => void;
   isCollapsed?: boolean;
+  // Notification bell
+  notifSupported: boolean;
+  notifPermission: NotificationPermission | 'unsupported';
+  notifEnabled: boolean;
+  onNotifToggle: () => Promise<void>;
 }
 
 function DashboardSidebar({
@@ -502,6 +518,10 @@ function DashboardSidebar({
   onOpenSettings,
   onSignOut,
   isCollapsed = false,
+  notifSupported,
+  notifPermission,
+  notifEnabled,
+  onNotifToggle,
 }: DashboardSidebarProps) {
   const { theme, toggle: toggleTheme } = useTheme();
   return (
@@ -598,6 +618,38 @@ function DashboardSidebar({
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
           </button>
+
+          {/* Notification bell — shown when notifications are supported */}
+          {notifSupported && (
+            <button
+              type="button"
+              className={`sidebar-action-btn notification-bell${notifEnabled ? ' is-enabled' : ''}${notifPermission === 'denied' ? ' is-blocked' : ''}`}
+              onClick={onNotifToggle}
+              title={
+                notifPermission === 'denied'
+                  ? 'Notifications blocked — enable in browser settings'
+                  : notifEnabled
+                  ? 'Notifications on — click to turn off'
+                  : 'Turn on deadline reminders'
+              }
+              aria-label="Toggle deadline notifications"
+              aria-pressed={notifEnabled}
+            >
+              {notifEnabled ? (
+                /* Bell with clapper (filled) — notifications ON */
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="0" aria-hidden="true">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              ) : (
+                /* Bell outline — notifications OFF */
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              )}
+            </button>
+          )}
 
           {!isCollapsed && (
             <button
